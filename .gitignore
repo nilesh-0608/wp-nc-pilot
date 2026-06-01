@@ -1,0 +1,12 @@
+# Node
+node_modules/
+npm-debug.log*
+*.tgz
+
+# Build artifacts
+*.zip
+
+# Dev/QA scratch
+shots/
+snap.txt
+*.bak
