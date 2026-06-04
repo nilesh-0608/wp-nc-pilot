@@ -51,11 +51,46 @@ class NCPilot_REST_MCP {
 			NCPILOT_REST_NS,
 			'/mcp',
 			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'handle' ),
-				'permission_callback' => array( 'NCPilot_Security', 'can_use_mcp' ),
+				// POST carries the JSON-RPC messages.
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'handle' ),
+					'permission_callback' => array( 'NCPilot_Security', 'can_use_mcp' ),
+				),
+				// MCP clients open a GET to start a server→client SSE stream, and
+				// may DELETE to end a session. This server is stateless and has no
+				// SSE stream, so per the MCP spec we answer 405 (NOT 404, which a
+				// strict client treats as "endpoint missing" and fails the
+				// connection on).
+				array(
+					'methods'             => 'GET, DELETE',
+					'callback'            => array( $this, 'method_not_allowed' ),
+					'permission_callback' => array( 'NCPilot_Security', 'can_use_mcp' ),
+				),
 			)
 		);
+	}
+
+	/**
+	 * Respond to GET/DELETE on the MCP endpoint with 405 + an Allow header,
+	 * signalling that only POST (request/response) is supported here.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function method_not_allowed() {
+		$response = new WP_REST_Response(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => null,
+				'error'   => array(
+					'code'    => self::ERR_INVALID_REQUEST,
+					'message' => 'Method Not Allowed. This MCP endpoint only supports POST.',
+				),
+			),
+			405
+		);
+		$response->header( 'Allow', 'POST' );
+		return $response;
 	}
 
 	/* ---------------------------------------------------------------------

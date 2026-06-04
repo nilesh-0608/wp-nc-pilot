@@ -4,7 +4,7 @@ Tags: ai, claude, mcp, automation, content
 Requires at least: 5.6
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,13 @@ toggles, exactly what Claude may do.
 4. Copy the command shown and paste it into Claude.
 
 == Changelog ==
+
+= 2.0.1 =
+* Fix: the MCP endpoint now answers GET and DELETE requests with HTTP 405
+  (Method Not Allowed) instead of 404. MCP clients open a GET to probe for a
+  server-sent-events stream when connecting; the previous 404 made some clients
+  treat the endpoint as missing and fail to connect. POST (the actual JSON-RPC
+  transport) was unaffected.
 
 = 2.0.0 =
 * Major: the plugin is now a self-contained remote MCP server. Claude Code and

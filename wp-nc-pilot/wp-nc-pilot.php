@@ -3,7 +3,7 @@
  * Plugin Name:       WP NC-Pilot
  * Plugin URI:        https://github.com/nilesh-0608/wp-nc-pilot
  * Description:       Manage your WordPress site by talking to Claude. One-click setup, no terminal, no config files. A self-contained remote MCP server — Claude connects directly to your site over HTTPS.
- * Version:           2.0.0
+ * Version:           2.0.1
  * Requires at least: 5.6
  * Requires PHP:      7.4
  * Author:            WP NC-Pilot
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NCPILOT_VERSION', '2.0.0' );
+define( 'NCPILOT_VERSION', '2.0.1' );
 define( 'NCPILOT_PLUGIN_FILE', __FILE__ );
 define( 'NCPILOT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NCPILOT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
