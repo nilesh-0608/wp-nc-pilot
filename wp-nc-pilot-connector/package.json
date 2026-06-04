@@ -1,6 +1,6 @@
 {
   "name": "wp-nc-pilot-connector",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Local MCP stdio server that lets Claude manage a WordPress site through the WP NC-Pilot plugin.",
   "keywords": [
     "mcp",
