@@ -219,7 +219,7 @@ class NCPilot_Security {
 		if ( false === $creds || ! WP_Filesystem( $creds ) ) {
 			return new WP_Error(
 				'ncpilot_fs_unavailable',
-				__( 'This host does not allow editing files directly from WordPress (it needs FTP details or has file editing disabled). Theme file changes are not possible here.', 'wp-nc-pilot' ),
+				__( 'This host does not allow editing files directly from WordPress (it needs FTP details or has file editing disabled). Theme file changes are not possible here.', 'nc-pilot' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -259,7 +259,7 @@ class NCPilot_Security {
 		if ( ! $wp_filesystem->copy( $absolute, $backup, true, FS_CHMOD_FILE ) ) {
 			return new WP_Error(
 				'ncpilot_backup_failed',
-				__( 'Could not create a backup of the file before changing it, so the change was stopped.', 'wp-nc-pilot' ),
+				__( 'Could not create a backup of the file before changing it, so the change was stopped.', 'nc-pilot' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -285,7 +285,7 @@ class NCPilot_Security {
 		if ( ! wp_mkdir_p( $dir ) ) {
 			return new WP_Error(
 				'ncpilot_backup_dir',
-				__( 'Could not create the backup folder.', 'wp-nc-pilot' ),
+				__( 'Could not create the backup folder.', 'nc-pilot' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -309,7 +309,7 @@ class NCPilot_Security {
 	 * @return bool|WP_Error
 	 */
 	public static function can_read_theme_files() {
-		return self::theme_gate( self::OPT_READ_THEME, __( 'Reading theme files is switched off. Turn on "Allow Claude to read theme files" on the WP NC-Pilot settings page.', 'wp-nc-pilot' ) );
+		return self::theme_gate( self::OPT_READ_THEME, __( 'Reading theme files is switched off. Turn on "Allow Claude to read theme files" on the NC-Pilot settings page.', 'nc-pilot' ) );
 	}
 
 	/**
@@ -318,7 +318,7 @@ class NCPilot_Security {
 	 * @return bool|WP_Error
 	 */
 	public static function can_edit_theme_files() {
-		return self::theme_gate( self::OPT_EDIT_THEME, __( 'Editing theme files is switched off. Turn on "Allow Claude to edit theme files" on the WP NC-Pilot settings page.', 'wp-nc-pilot' ) );
+		return self::theme_gate( self::OPT_EDIT_THEME, __( 'Editing theme files is switched off. Turn on "Allow Claude to edit theme files" on the NC-Pilot settings page.', 'nc-pilot' ) );
 	}
 
 	/**
@@ -332,7 +332,7 @@ class NCPilot_Security {
 		if ( ! current_user_can( 'edit_themes' ) ) {
 			return new WP_Error(
 				'ncpilot_forbidden',
-				__( 'Your WordPress user is not allowed to work with theme files.', 'wp-nc-pilot' ),
+				__( 'Your WordPress user is not allowed to work with theme files.', 'nc-pilot' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -355,14 +355,14 @@ class NCPilot_Security {
 		if ( ! current_user_can( 'upload_files' ) ) {
 			return new WP_Error(
 				'ncpilot_forbidden',
-				__( 'Your WordPress user is not allowed to upload files.', 'wp-nc-pilot' ),
+				__( 'Your WordPress user is not allowed to upload files.', 'nc-pilot' ),
 				array( 'status' => 403 )
 			);
 		}
 		if ( ! self::is_enabled( self::OPT_UPLOAD ) ) {
 			return new WP_Error(
 				'ncpilot_toggle_off',
-				__( 'Uploading media is switched off. Turn on "Let Claude upload media" on the WP NC-Pilot settings page.', 'wp-nc-pilot' ),
+				__( 'Uploading media is switched off. Turn on "Let Claude upload media" on the NC-Pilot settings page.', 'nc-pilot' ),
 				array( 'status' => 403 )
 			);
 		}

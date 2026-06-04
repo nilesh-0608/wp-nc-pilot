@@ -1,8 +1,8 @@
-# WP NC-Pilot
+# NC-Pilot
 
 **Manage your WordPress site by talking to Claude — no terminal, no config files.**
 
-WP NC-Pilot lets you run your website from a conversation with Claude: write and
+NC-Pilot lets you run your website from a conversation with Claude: write and
 edit posts and pages, manage your media, switch plugins on or off, and (if you
 allow it) edit theme files. Setup is one button and one copy-paste.
 
@@ -20,13 +20,13 @@ Claude (Code or Desktop)  ──HTTPS / MCP──▶  your WordPress site (this 
 [Claude Code](https://claude.com/claude-code) or the Claude Desktop app.
 
 1. **Install the plugin.** In WordPress, go to **Plugins → Add New → Upload
-   Plugin**, choose `wp-nc-pilot.zip`, and click **Install Now**, then **Activate**.
-2. **Open WP NC-Pilot** from the admin menu (the superhero icon).
+   Plugin**, choose `nc-pilot.zip`, and click **Install Now**, then **Activate**.
+2. **Open NC-Pilot** from the admin menu (the superhero icon).
 3. **Click "Connect to Claude".** It creates a secure password and shows you a
    ready-to-paste command. (You'll see the password only once — that's normal.)
 4. **Paste the command** into Claude Code, *or* paste the JSON block into your
    Claude Desktop config. Done.
-5. Come back to the WP NC-Pilot screen — the status turns **green** once Claude
+5. Come back to the NC-Pilot screen — the status turns **green** once Claude
    connects.
 
 Now just talk to Claude: *"List my draft posts,"* *"Create a page called
@@ -34,7 +34,7 @@ Pricing,"* *"Upload this image,"* and so on.
 
 ## What Claude is allowed to do
 
-Everything risky starts **switched off**. On the WP NC-Pilot screen you decide,
+Everything risky starts **switched off**. On the NC-Pilot screen you decide,
 with plain-language toggles, exactly what Claude may do:
 
 | Toggle                         | Default | What it allows                                   |
@@ -71,7 +71,7 @@ routes, so every capability toggle and permission check is enforced server-side.
 ## Repository layout
 
 ```
-wp-nc-pilot/   The WordPress plugin (PHP, no build step) — this is the whole product
+nc-pilot/   The WordPress plugin (PHP, no build step) — this is the whole product
 assets/        Plugin icon + banner artwork
 ```
 

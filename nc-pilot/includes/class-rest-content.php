@@ -59,14 +59,14 @@ class NCPilot_REST_Content {
 		if ( ! current_user_can( 'delete_posts' ) ) {
 			return new WP_Error(
 				'ncpilot_forbidden',
-				__( 'Your WordPress user is not allowed to delete content.', 'wp-nc-pilot' ),
+				__( 'Your WordPress user is not allowed to delete content.', 'nc-pilot' ),
 				array( 'status' => 403 )
 			);
 		}
 		if ( ! NCPilot_Security::is_enabled( NCPilot_Security::OPT_DELETE ) ) {
 			return new WP_Error(
 				'ncpilot_toggle_off',
-				__( 'Deleting content is switched off. Turn on "Let Claude delete posts, pages, or media" on the WP NC-Pilot settings page.', 'wp-nc-pilot' ),
+				__( 'Deleting content is switched off. Turn on "Let Claude delete posts, pages, or media" on the NC-Pilot settings page.', 'nc-pilot' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -88,7 +88,7 @@ class NCPilot_REST_Content {
 		if ( ! $post ) {
 			return new WP_Error(
 				'ncpilot_not_found',
-				__( 'No item with that ID exists.', 'wp-nc-pilot' ),
+				__( 'No item with that ID exists.', 'nc-pilot' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -99,7 +99,7 @@ class NCPilot_REST_Content {
 			return new WP_Error(
 				'ncpilot_type_mismatch',
 				/* translators: 1: requested type, 2: actual post type. */
-				sprintf( __( 'Item #%1$d is not a %2$s.', 'wp-nc-pilot' ), $id, $type ),
+				sprintf( __( 'Item #%1$d is not a %2$s.', 'nc-pilot' ), $id, $type ),
 				array( 'status' => 400 )
 			);
 		}
@@ -108,7 +108,7 @@ class NCPilot_REST_Content {
 		if ( ! current_user_can( 'delete_post', $id ) ) {
 			return new WP_Error(
 				'ncpilot_forbidden',
-				__( 'Your WordPress user is not allowed to delete this item.', 'wp-nc-pilot' ),
+				__( 'Your WordPress user is not allowed to delete this item.', 'nc-pilot' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -127,7 +127,7 @@ class NCPilot_REST_Content {
 		if ( ! $result ) {
 			return new WP_Error(
 				'ncpilot_delete_failed',
-				__( 'The item could not be deleted.', 'wp-nc-pilot' ),
+				__( 'The item could not be deleted.', 'nc-pilot' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -139,8 +139,8 @@ class NCPilot_REST_Content {
 				'type'    => $type,
 				'trashed' => $trashed,
 				'message' => $trashed
-					? __( 'Moved to Trash.', 'wp-nc-pilot' )
-					: __( 'Deleted permanently.', 'wp-nc-pilot' ),
+					? __( 'Moved to Trash.', 'nc-pilot' )
+					: __( 'Deleted permanently.', 'nc-pilot' ),
 			),
 			200
 		);

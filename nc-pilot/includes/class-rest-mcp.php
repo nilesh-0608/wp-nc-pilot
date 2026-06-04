@@ -168,7 +168,7 @@ class NCPilot_REST_MCP {
 						'protocolVersion' => $protocol,
 						'capabilities'    => array( 'tools' => (object) array() ),
 						'serverInfo'      => array(
-							'name'    => 'wp-nc-pilot',
+							'name'    => 'nc-pilot',
 							'version' => NCPILOT_VERSION,
 						),
 					)
@@ -337,7 +337,7 @@ class NCPilot_REST_MCP {
 			case 'delete_media':
 				return $this->tool_delete( 'media', 'media item', $args );
 			default:
-				throw new Exception( 'Unknown tool: ' . $name );
+				throw new Exception( esc_html( 'Unknown tool: ' . $name ) );
 		}
 	}
 
@@ -368,7 +368,7 @@ class NCPilot_REST_MCP {
 		$res = rest_do_request( $req );
 		if ( $res->is_error() ) {
 			$err = $res->as_error();
-			throw new Exception( $err->get_error_message() );
+			throw new Exception( esc_html( $err->get_error_message() ) );
 		}
 		return $res->get_data();
 	}
@@ -552,7 +552,7 @@ class NCPilot_REST_MCP {
 			}
 		}
 		if ( empty( $body ) ) {
-			throw new Exception( 'Nothing to update — provide at least one field to change.' );
+			throw new Exception( esc_html( 'Nothing to update — provide at least one field to change.' ) );
 		}
 		$p = $this->rest( 'POST', $route . '/' . $id, $body );
 		return $this->created_line( 'Updated ' . $noun, $p );
@@ -796,7 +796,7 @@ class NCPilot_REST_MCP {
 	 */
 	private function require_string( array $args, $key ) {
 		if ( ! isset( $args[ $key ] ) || '' === (string) $args[ $key ] ) {
-			throw new Exception( 'Missing required value: ' . $key . '.' );
+			throw new Exception( esc_html( 'Missing required value: ' . $key . '.' ) );
 		}
 		return (string) $args[ $key ];
 	}
@@ -811,7 +811,7 @@ class NCPilot_REST_MCP {
 	 */
 	private function require_int( array $args, $key ) {
 		if ( ! isset( $args[ $key ] ) || ! is_numeric( $args[ $key ] ) ) {
-			throw new Exception( 'Missing required number: ' . $key . '.' );
+			throw new Exception( esc_html( 'Missing required number: ' . $key . '.' ) );
 		}
 		return (int) $args[ $key ];
 	}

@@ -54,14 +54,14 @@ class NCPilot_REST_Plugins {
 		if ( ! current_user_can( 'activate_plugins' ) ) {
 			return new WP_Error(
 				'ncpilot_forbidden',
-				__( 'Your WordPress user is not allowed to manage plugins.', 'wp-nc-pilot' ),
+				__( 'Your WordPress user is not allowed to manage plugins.', 'nc-pilot' ),
 				array( 'status' => 403 )
 			);
 		}
 		if ( ! NCPilot_Security::is_enabled( NCPilot_Security::OPT_PLUGINS ) ) {
 			return new WP_Error(
 				'ncpilot_toggle_off',
-				__( 'Managing plugins is switched off. Turn on "Let Claude turn plugins on or off" on the WP NC-Pilot settings page.', 'wp-nc-pilot' ),
+				__( 'Managing plugins is switched off. Turn on "Let Claude turn plugins on or off" on the NC-Pilot settings page.', 'nc-pilot' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -82,7 +82,7 @@ class NCPilot_REST_Plugins {
 			return new WP_Error(
 				'ncpilot_plugin_not_found',
 				/* translators: %s: plugin identifier supplied by the caller. */
-				sprintf( __( 'No installed plugin matches "%s". Use the exact path from the plugin list.', 'wp-nc-pilot' ), (string) $request['plugin'] ),
+				sprintf( __( 'No installed plugin matches "%s". Use the exact path from the plugin list.', 'nc-pilot' ), (string) $request['plugin'] ),
 				array( 'status' => 404 )
 			);
 		}
@@ -96,7 +96,7 @@ class NCPilot_REST_Plugins {
 				return new WP_Error(
 					'ncpilot_activate_failed',
 					/* translators: %s: underlying error message. */
-					sprintf( __( 'Could not activate the plugin: %s', 'wp-nc-pilot' ), $result->get_error_message() ),
+					sprintf( __( 'Could not activate the plugin: %s', 'nc-pilot' ), $result->get_error_message() ),
 					array( 'status' => 500 )
 				);
 			}

@@ -78,7 +78,7 @@ class NCPilot_REST_Media {
 			if ( strlen( $base64 ) > (int) ceil( self::MAX_BYTES / 3 ) * 4 ) {
 				return new WP_Error(
 					'ncpilot_too_large',
-					__( 'That file is too large to upload here (over 10 MB).', 'wp-nc-pilot' ),
+					__( 'That file is too large to upload here (over 10 MB).', 'nc-pilot' ),
 					array( 'status' => 413 )
 				);
 			}
@@ -89,7 +89,7 @@ class NCPilot_REST_Media {
 			if ( '' === $filename ) {
 				return new WP_Error(
 					'ncpilot_no_filename',
-					__( 'When uploading file contents directly, a filename (with extension) is required.', 'wp-nc-pilot' ),
+					__( 'When uploading file contents directly, a filename (with extension) is required.', 'nc-pilot' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -105,7 +105,7 @@ class NCPilot_REST_Media {
 		} else {
 			return new WP_Error(
 				'ncpilot_no_source',
-				__( 'Provide either a public "url" to download, or "base64" file contents with a "filename".', 'wp-nc-pilot' ),
+				__( 'Provide either a public "url" to download, or "base64" file contents with a "filename".', 'nc-pilot' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -113,7 +113,7 @@ class NCPilot_REST_Media {
 		if ( strlen( $bytes ) > self::MAX_BYTES ) {
 			return new WP_Error(
 				'ncpilot_too_large',
-				__( 'That file is too large to upload here (over 10 MB).', 'wp-nc-pilot' ),
+				__( 'That file is too large to upload here (over 10 MB).', 'nc-pilot' ),
 				array( 'status' => 413 )
 			);
 		}
@@ -141,7 +141,7 @@ class NCPilot_REST_Media {
 	private function validate_type( $bytes, $filename ) {
 		$bad_type = new WP_Error(
 			'ncpilot_bad_type',
-			__( 'That file type is not allowed to be uploaded to WordPress.', 'wp-nc-pilot' ),
+			__( 'That file type is not allowed to be uploaded to WordPress.', 'nc-pilot' ),
 			array( 'status' => 415 )
 		);
 
@@ -200,7 +200,7 @@ class NCPilot_REST_Media {
 		if ( false === $bytes || '' === $bytes ) {
 			return new WP_Error(
 				'ncpilot_bad_base64',
-				__( 'The file contents were not valid base64.', 'wp-nc-pilot' ),
+				__( 'The file contents were not valid base64.', 'nc-pilot' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -218,7 +218,7 @@ class NCPilot_REST_Media {
 		if ( '' === $url ) {
 			return new WP_Error(
 				'ncpilot_bad_url',
-				__( 'That does not look like a valid http(s) URL.', 'wp-nc-pilot' ),
+				__( 'That does not look like a valid http(s) URL.', 'nc-pilot' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -241,7 +241,7 @@ class NCPilot_REST_Media {
 			return new WP_Error(
 				'ncpilot_fetch_failed',
 				/* translators: %s: underlying error message. */
-				sprintf( __( 'Could not download the file: %s', 'wp-nc-pilot' ), $response->get_error_message() ),
+				sprintf( __( 'Could not download the file: %s', 'nc-pilot' ), $response->get_error_message() ),
 				array( 'status' => 502 )
 			);
 		}
@@ -251,7 +251,7 @@ class NCPilot_REST_Media {
 			return new WP_Error(
 				'ncpilot_fetch_failed',
 				/* translators: %d: HTTP status code. */
-				sprintf( __( 'Could not download the file (HTTP %d).', 'wp-nc-pilot' ), $code ),
+				sprintf( __( 'Could not download the file (HTTP %d).', 'nc-pilot' ), $code ),
 				array( 'status' => 502 )
 			);
 		}
@@ -260,7 +260,7 @@ class NCPilot_REST_Media {
 		if ( '' === $bytes ) {
 			return new WP_Error(
 				'ncpilot_fetch_empty',
-				__( 'The downloaded file was empty.', 'wp-nc-pilot' ),
+				__( 'The downloaded file was empty.', 'nc-pilot' ),
 				array( 'status' => 502 )
 			);
 		}
@@ -291,7 +291,7 @@ class NCPilot_REST_Media {
 			return new WP_Error(
 				'ncpilot_upload_failed',
 				/* translators: %s: underlying error message. */
-				sprintf( __( 'The file could not be saved: %s', 'wp-nc-pilot' ), $upload['error'] ),
+				sprintf( __( 'The file could not be saved: %s', 'nc-pilot' ), $upload['error'] ),
 				array( 'status' => 500 )
 			);
 		}

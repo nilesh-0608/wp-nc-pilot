@@ -1,10 +1,10 @@
-=== WP NC-Pilot ===
+=== NC-Pilot ===
 Contributors: wpncpilot
 Tags: ai, claude, mcp, automation, content
 Requires at least: 5.6
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.1
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Manage your WordPress site by talking to Claude. One-click setup — no terminal
 
 == Description ==
 
-WP NC-Pilot lets you run your website by chatting with Claude. Create posts, edit
+NC-Pilot lets you run your website by chatting with Claude. Create posts, edit
 pages, manage media, switch plugins on or off, and (optionally) edit theme files —
 all from a conversation.
 
@@ -44,10 +44,15 @@ toggles, exactly what Claude may do.
 
 1. In wp-admin, go to Plugins → Add New → Upload Plugin and upload the zip.
 2. Activate it.
-3. Open "WP NC-Pilot" in the menu and press "Connect to Claude".
+3. Open "NC-Pilot" in the menu and press "Connect to Claude".
 4. Copy the command shown and paste it into Claude.
 
 == Changelog ==
+
+= 2.1.0 =
+* Renamed to "NC-Pilot" (slug nc-pilot) for the WordPress.org directory.
+* Passed the official Plugin Check: exception messages are now escaped, and
+  read-only admin GET flags are annotated as not requiring a nonce.
 
 = 2.0.1 =
 * Fix: the MCP endpoint now answers GET and DELETE requests with HTTP 405

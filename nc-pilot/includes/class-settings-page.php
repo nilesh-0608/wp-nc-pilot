@@ -3,7 +3,7 @@
  * Admin settings page — the friendly heart of the plugin.
  *
  * Responsibilities:
- *  - Top-level "WP NC-Pilot" admin menu.
+ *  - Top-level "NC-Pilot" admin menu.
  *  - "Connect to Claude" button that mints an Application Password.
  *  - Pre-filled, copy-paste setup commands for Claude Code AND Claude Desktop.
  *  - Live connection status badge.
@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class NCPilot_Settings_Page {
 
-	const MENU_SLUG       = 'wp-nc-pilot';
-	const APP_PASS_NAME   = 'WP NC-Pilot MCP';
+	const MENU_SLUG       = 'nc-pilot';
+	const APP_PASS_NAME   = 'NC-Pilot MCP';
 	const NONCE_CONNECT   = 'ncpilot_connect';
 	const NONCE_TOGGLES   = 'ncpilot_toggles';
 	const TRANSIENT_PREFIX = 'ncpilot_newpass_';
@@ -38,8 +38,8 @@ class NCPilot_Settings_Page {
 	 */
 	public function add_menu() {
 		add_menu_page(
-			__( 'WP NC-Pilot', 'wp-nc-pilot' ),
-			__( 'WP NC-Pilot', 'wp-nc-pilot' ),
+			__( 'NC-Pilot', 'nc-pilot' ),
+			__( 'NC-Pilot', 'nc-pilot' ),
 			'manage_options',
 			self::MENU_SLUG,
 			array( $this, 'render_page' ),
@@ -57,7 +57,7 @@ class NCPilot_Settings_Page {
 	 */
 	public function handle_connect() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'wp-nc-pilot' ) );
+			wp_die( esc_html__( 'You do not have permission to do this.', 'nc-pilot' ) );
 		}
 		check_admin_referer( self::NONCE_CONNECT );
 
@@ -66,7 +66,7 @@ class NCPilot_Settings_Page {
 		// Some hosts disable Application Passwords (e.g. non-HTTPS, or a filter).
 		if ( ! function_exists( 'wp_is_application_passwords_available' ) || ! wp_is_application_passwords_available() ) {
 			$this->redirect_with_error(
-				__( 'Application Passwords are turned off on this site. They usually require HTTPS. Ask your host to enable them, then try again.', 'wp-nc-pilot' )
+				__( 'Application Passwords are turned off on this site. They usually require HTTPS. Ask your host to enable them, then try again.', 'nc-pilot' )
 			);
 			return;
 		}
@@ -101,7 +101,7 @@ class NCPilot_Settings_Page {
 	 */
 	public function handle_save_toggles() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'wp-nc-pilot' ) );
+			wp_die( esc_html__( 'You do not have permission to do this.', 'nc-pilot' ) );
 		}
 		check_admin_referer( self::NONCE_TOGGLES );
 
@@ -130,19 +130,21 @@ class NCPilot_Settings_Page {
 
 		$user        = wp_get_current_user();
 		$new_pass    = $this->pop_new_password( $user->ID );
-		$has_error   = isset( $_GET['ncpilot_error'] ) ? sanitize_text_field( wp_unslash( $_GET['ncpilot_error'] ) ) : '';
-		$just_saved  = isset( $_GET['ncpilot_saved'] );
+		// Display-only flags set on our own admin-post redirects; no state change
+		// here, so a nonce is not required to read them.
+		$has_error   = isset( $_GET['ncpilot_error'] ) ? sanitize_text_field( wp_unslash( $_GET['ncpilot_error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$just_saved  = isset( $_GET['ncpilot_saved'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$is_connected = NCPilot_Security::is_connected();
 
 		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'WP NC-Pilot', 'wp-nc-pilot' ) . '</h1>';
-		echo '<p>' . esc_html__( 'Let Claude help you manage this website. Set it up once below, then talk to Claude to create posts, edit pages, and more.', 'wp-nc-pilot' ) . '</p>';
+		echo '<h1>' . esc_html__( 'NC-Pilot', 'nc-pilot' ) . '</h1>';
+		echo '<p>' . esc_html__( 'Let Claude help you manage this website. Set it up once below, then talk to Claude to create posts, edit pages, and more.', 'nc-pilot' ) . '</p>';
 
 		if ( $has_error ) {
 			echo '<div class="notice notice-error"><p>' . esc_html( $has_error ) . '</p></div>';
 		}
 		if ( $just_saved ) {
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'wp-nc-pilot' ) . '</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'nc-pilot' ) . '</p></div>';
 		}
 
 		$this->render_status_badge( $is_connected );
@@ -159,20 +161,20 @@ class NCPilot_Settings_Page {
 	 */
 	private function render_status_badge( $is_connected ) {
 		$last = NCPilot_Security::last_seen();
-		echo '<h2>' . esc_html__( 'Connection status', 'wp-nc-pilot' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Connection status', 'nc-pilot' ) . '</h2>';
 
 		if ( $is_connected ) {
 			echo '<p><span style="display:inline-block;padding:4px 12px;border-radius:12px;background:#d6f5d6;color:#0a6b0a;font-weight:600;">'
-				. esc_html__( 'Connected ✓', 'wp-nc-pilot' ) . '</span> ';
-			echo esc_html__( 'Claude reached your site recently.', 'wp-nc-pilot' ) . '</p>';
+				. esc_html__( 'Connected ✓', 'nc-pilot' ) . '</span> ';
+			echo esc_html__( 'Claude reached your site recently.', 'nc-pilot' ) . '</p>';
 		} else {
 			echo '<p><span style="display:inline-block;padding:4px 12px;border-radius:12px;background:#e2e2e2;color:#555;font-weight:600;">'
-				. esc_html__( 'Not connected yet', 'wp-nc-pilot' ) . '</span> ';
+				. esc_html__( 'Not connected yet', 'nc-pilot' ) . '</span> ';
 			if ( $last > 0 ) {
 				/* translators: %s: human-readable time difference. */
-				echo esc_html( sprintf( __( 'Last seen %s ago.', 'wp-nc-pilot' ), human_time_diff( $last ) ) );
+				echo esc_html( sprintf( __( 'Last seen %s ago.', 'nc-pilot' ), human_time_diff( $last ) ) );
 			} else {
-				echo esc_html__( 'Finish the setup below, then run the command in Claude.', 'wp-nc-pilot' );
+				echo esc_html__( 'Finish the setup below, then run the command in Claude.', 'nc-pilot' );
 			}
 			echo '</p>';
 		}
@@ -185,14 +187,14 @@ class NCPilot_Settings_Page {
 	 * @param string|null $new_pass Freshly minted plaintext password, or null.
 	 */
 	private function render_connect_section( $user, $new_pass ) {
-		echo '<hr><h2>' . esc_html__( '1. Connect to Claude', 'wp-nc-pilot' ) . '</h2>';
+		echo '<hr><h2>' . esc_html__( '1. Connect to Claude', 'nc-pilot' ) . '</h2>';
 
 		if ( null === $new_pass ) {
-			echo '<p>' . esc_html__( 'Click the button to create a secure password for Claude. You will see a ready-to-paste command next.', 'wp-nc-pilot' ) . '</p>';
+			echo '<p>' . esc_html__( 'Click the button to create a secure password for Claude. You will see a ready-to-paste command next.', 'nc-pilot' ) . '</p>';
 			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 			echo '<input type="hidden" name="action" value="ncpilot_connect">';
 			wp_nonce_field( self::NONCE_CONNECT );
-			submit_button( __( 'Connect to Claude', 'wp-nc-pilot' ), 'primary large' );
+			submit_button( __( 'Connect to Claude', 'nc-pilot' ), 'primary large' );
 			echo '</form>';
 			return;
 		}
@@ -205,31 +207,31 @@ class NCPilot_Settings_Page {
 		$token    = base64_encode( $username . ':' . str_replace( ' ', '', (string) $new_pass ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 
 		echo '<div class="notice notice-warning inline"><p><strong>'
-			. esc_html__( 'Copy this now — it is shown only once.', 'wp-nc-pilot' )
-			. '</strong> ' . esc_html__( 'For your security, WordPress will not show this password again. If you lose it, just click Connect again to make a new one.', 'wp-nc-pilot' )
+			. esc_html__( 'Copy this now — it is shown only once.', 'nc-pilot' )
+			. '</strong> ' . esc_html__( 'For your security, WordPress will not show this password again. If you lose it, just click Connect again to make a new one.', 'nc-pilot' )
 			. '</p></div>';
 
 		// --- Claude Code command ---
-		echo '<h3>' . esc_html__( 'For Claude Code (terminal app)', 'wp-nc-pilot' ) . '</h3>';
-		echo '<p>' . esc_html__( 'Copy this whole command and paste it into Claude Code:', 'wp-nc-pilot' ) . '</p>';
+		echo '<h3>' . esc_html__( 'For Claude Code (terminal app)', 'nc-pilot' ) . '</h3>';
+		echo '<p>' . esc_html__( 'Copy this whole command and paste it into Claude Code:', 'nc-pilot' ) . '</p>';
 		$cc_command = $this->build_cc_command( $mcp_url, $token );
 		$this->render_copy_box( 'ncpilot-cc', $cc_command );
 
 		// --- Claude Desktop JSON ---
-		echo '<h3>' . esc_html__( 'For Claude Desktop app', 'wp-nc-pilot' ) . '</h3>';
-		echo '<p>' . esc_html__( 'Prefer the Claude Desktop app? Open Settings → Developer → Edit Config, and add this inside "mcpServers":', 'wp-nc-pilot' ) . '</p>';
+		echo '<h3>' . esc_html__( 'For Claude Desktop app', 'nc-pilot' ) . '</h3>';
+		echo '<p>' . esc_html__( 'Prefer the Claude Desktop app? Open Settings → Developer → Edit Config, and add this inside "mcpServers":', 'nc-pilot' ) . '</p>';
 		$desktop_json = $this->build_desktop_json( $mcp_url, $token );
 		$this->render_copy_box( 'ncpilot-desktop', $desktop_json );
 
-		echo '<p>' . esc_html__( 'After you run it, come back here — the status above turns green once Claude connects.', 'wp-nc-pilot' ) . '</p>';
+		echo '<p>' . esc_html__( 'After you run it, come back here — the status above turns green once Claude connects.', 'nc-pilot' ) . '</p>';
 	}
 
 	/**
 	 * Capability toggles section.
 	 */
 	private function render_toggles_section() {
-		echo '<hr><h2>' . esc_html__( '2. What is Claude allowed to do?', 'wp-nc-pilot' ) . '</h2>';
-		echo '<p>' . esc_html__( 'Everything risky starts switched OFF. Turn on only what you need. You can change these any time.', 'wp-nc-pilot' ) . '</p>';
+		echo '<hr><h2>' . esc_html__( '2. What is Claude allowed to do?', 'nc-pilot' ) . '</h2>';
+		echo '<p>' . esc_html__( 'Everything risky starts switched OFF. Turn on only what you need. You can change these any time.', 'nc-pilot' ) . '</p>';
 
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		echo '<input type="hidden" name="action" value="ncpilot_save_toggles">';
@@ -239,32 +241,32 @@ class NCPilot_Settings_Page {
 
 		$this->render_toggle_row(
 			NCPilot_Security::OPT_READ_THEME,
-			__( 'Let Claude read theme files', 'wp-nc-pilot' ),
-			__( 'Low risk. Claude can look at your theme\'s code to understand your site.', 'wp-nc-pilot' )
+			__( 'Let Claude read theme files', 'nc-pilot' ),
+			__( 'Low risk. Claude can look at your theme\'s code to understand your site.', 'nc-pilot' )
 		);
 		$this->render_toggle_row(
 			NCPilot_Security::OPT_EDIT_THEME,
-			__( 'Let Claude EDIT theme files', 'wp-nc-pilot' ),
-			__( '⚠️ Advanced. Claude can change your theme\'s code, which can break how your site looks or works. A backup of each file is saved automatically before any change.', 'wp-nc-pilot' )
+			__( 'Let Claude EDIT theme files', 'nc-pilot' ),
+			__( '⚠️ Advanced. Claude can change your theme\'s code, which can break how your site looks or works. A backup of each file is saved automatically before any change.', 'nc-pilot' )
 		);
 		$this->render_toggle_row(
 			NCPilot_Security::OPT_PLUGINS,
-			__( 'Let Claude turn plugins on or off', 'wp-nc-pilot' ),
-			__( 'Claude can activate or deactivate plugins you already installed. It cannot install new ones.', 'wp-nc-pilot' )
+			__( 'Let Claude turn plugins on or off', 'nc-pilot' ),
+			__( 'Claude can activate or deactivate plugins you already installed. It cannot install new ones.', 'nc-pilot' )
 		);
 		$this->render_toggle_row(
 			NCPilot_Security::OPT_DELETE,
-			__( 'Let Claude delete posts, pages, or media', 'wp-nc-pilot' ),
-			__( '⚠️ Permanent. Deleted items go to the Trash where possible, but treat this as permanent.', 'wp-nc-pilot' )
+			__( 'Let Claude delete posts, pages, or media', 'nc-pilot' ),
+			__( '⚠️ Permanent. Deleted items go to the Trash where possible, but treat this as permanent.', 'nc-pilot' )
 		);
 		$this->render_toggle_row(
 			NCPilot_Security::OPT_UPLOAD,
-			__( 'Let Claude upload media', 'wp-nc-pilot' ),
-			__( 'Claude can add images and files to your Media Library, either from a web link or by uploading a file from your computer. Only file types WordPress already allows are accepted.', 'wp-nc-pilot' )
+			__( 'Let Claude upload media', 'nc-pilot' ),
+			__( 'Claude can add images and files to your Media Library, either from a web link or by uploading a file from your computer. Only file types WordPress already allows are accepted.', 'nc-pilot' )
 		);
 
 		echo '</tbody></table>';
-		submit_button( __( 'Save permissions', 'wp-nc-pilot' ) );
+		submit_button( __( 'Save permissions', 'nc-pilot' ) );
 		echo '</form>';
 	}
 
@@ -279,7 +281,7 @@ class NCPilot_Settings_Page {
 		$checked = NCPilot_Security::is_enabled( $option_key );
 		echo '<tr><th scope="row">' . esc_html( $label ) . '</th><td>';
 		echo '<label><input type="checkbox" name="' . esc_attr( $option_key ) . '" value="1" ' . checked( $checked, true, false ) . '> ';
-		echo esc_html__( 'Enabled', 'wp-nc-pilot' ) . '</label>';
+		echo esc_html__( 'Enabled', 'nc-pilot' ) . '</label>';
 		echo '<p class="description">' . esc_html( $help ) . '</p>';
 		echo '</td></tr>';
 	}
@@ -297,7 +299,7 @@ class NCPilot_Settings_Page {
 			. 'onclick="this.select();">' . esc_textarea( $content ) . '</textarea>';
 		echo '<p><button type="button" class="button" '
 			. 'onclick="(function(){var t=document.getElementById(\'' . esc_js( $id ) . '\');t.select();document.execCommand(\'copy\');})();">'
-			. esc_html__( 'Copy', 'wp-nc-pilot' ) . '</button></p>';
+			. esc_html__( 'Copy', 'nc-pilot' ) . '</button></p>';
 	}
 
 	/* ---------------------------------------------------------------------
@@ -315,7 +317,7 @@ class NCPilot_Settings_Page {
 		// Shell-escape every value: the user pastes this into a terminal, so a
 		// URL or token must not be able to alter the command.
 		return sprintf(
-			"claude mcp add --transport http wp-nc-pilot \\\n"
+			"claude mcp add --transport http nc-pilot \\\n"
 			. "  %s \\\n"
 			. "  --header %s",
 			$this->shell_arg( $mcp_url ),
@@ -347,7 +349,7 @@ class NCPilot_Settings_Page {
 	private function build_desktop_json( $mcp_url, $token ) {
 		$config = array(
 			'mcpServers' => array(
-				'wp-nc-pilot' => array(
+				'nc-pilot' => array(
 					'type'    => 'http',
 					'url'     => $mcp_url,
 					'headers' => array(

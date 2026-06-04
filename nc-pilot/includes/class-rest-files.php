@@ -162,14 +162,14 @@ class NCPilot_REST_Files {
 		if ( ! is_file( $abs ) ) {
 			return new WP_Error(
 				'ncpilot_not_found',
-				__( 'That file does not exist in the theme.', 'wp-nc-pilot' ),
+				__( 'That file does not exist in the theme.', 'nc-pilot' ),
 				array( 'status' => 404 )
 			);
 		}
 		if ( filesize( $abs ) > self::MAX_BYTES ) {
 			return new WP_Error(
 				'ncpilot_too_large',
-				__( 'That file is too large to open here (over 1 MB).', 'wp-nc-pilot' ),
+				__( 'That file is too large to open here (over 1 MB).', 'nc-pilot' ),
 				array( 'status' => 413 )
 			);
 		}
@@ -178,7 +178,7 @@ class NCPilot_REST_Files {
 		if ( false === $contents ) {
 			return new WP_Error(
 				'ncpilot_read_failed',
-				__( 'The file could not be read.', 'wp-nc-pilot' ),
+				__( 'The file could not be read.', 'nc-pilot' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -209,7 +209,7 @@ class NCPilot_REST_Files {
 		if ( strlen( $content ) > self::MAX_BYTES ) {
 			return new WP_Error(
 				'ncpilot_too_large',
-				__( 'That content is too large to save here (over 1 MB).', 'wp-nc-pilot' ),
+				__( 'That content is too large to save here (over 1 MB).', 'nc-pilot' ),
 				array( 'status' => 413 )
 			);
 		}
@@ -228,7 +228,7 @@ class NCPilot_REST_Files {
 		if ( ! $fs->put_contents( $abs, $content, FS_CHMOD_FILE ) ) {
 			return new WP_Error(
 				'ncpilot_write_failed',
-				__( 'The file could not be saved. The host may be blocking changes to this file.', 'wp-nc-pilot' ),
+				__( 'The file could not be saved. The host may be blocking changes to this file.', 'nc-pilot' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -259,7 +259,7 @@ class NCPilot_REST_Files {
 		if ( ! is_file( $abs ) ) {
 			return new WP_Error(
 				'ncpilot_not_found',
-				__( 'That file does not exist in the theme.', 'wp-nc-pilot' ),
+				__( 'That file does not exist in the theme.', 'nc-pilot' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -278,7 +278,7 @@ class NCPilot_REST_Files {
 		if ( ! $fs->delete( $abs, false, 'f' ) ) {
 			return new WP_Error(
 				'ncpilot_delete_failed',
-				__( 'The file could not be deleted. The host may be blocking changes to this file.', 'wp-nc-pilot' ),
+				__( 'The file could not be deleted. The host may be blocking changes to this file.', 'nc-pilot' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -301,7 +301,7 @@ class NCPilot_REST_Files {
 	private function bad_path() {
 		return new WP_Error(
 			'ncpilot_bad_path',
-			__( 'That path is not allowed. Only files inside the active theme can be opened.', 'wp-nc-pilot' ),
+			__( 'That path is not allowed. Only files inside the active theme can be opened.', 'nc-pilot' ),
 			array( 'status' => 400 )
 		);
 	}

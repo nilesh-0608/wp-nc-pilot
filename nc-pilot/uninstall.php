@@ -32,7 +32,7 @@ $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 );
 
 // We deliberately leave in place:
-//  - the Application Password named "WP NC-Pilot MCP" (revoke it under
+//  - the Application Password named "NC-Pilot MCP" (revoke it under
 //    Users -> Profile -> Application Passwords if you want to cut access), and
 //  - any theme-file backups in wp-content/uploads/wp-nc-pilot-backups/
 //    (so changes remain recoverable after uninstall).
