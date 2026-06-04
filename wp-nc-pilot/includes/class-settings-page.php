@@ -198,8 +198,11 @@ class NCPilot_Settings_Page {
 		}
 
 		// We just generated a password — show it once, plus pre-filled commands.
-		$site_url = $this->site_url();
 		$username = $user->user_login;
+		$mcp_url  = rest_url( NCPILOT_REST_NS . '/mcp' );
+		// HTTP Basic token. WordPress strips spaces from application passwords
+		// when authenticating, so we send the compact (space-free) form.
+		$token    = base64_encode( $username . ':' . str_replace( ' ', '', (string) $new_pass ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 
 		echo '<div class="notice notice-warning inline"><p><strong>'
 			. esc_html__( 'Copy this now — it is shown only once.', 'wp-nc-pilot' )
@@ -209,13 +212,13 @@ class NCPilot_Settings_Page {
 		// --- Claude Code command ---
 		echo '<h3>' . esc_html__( 'For Claude Code (terminal app)', 'wp-nc-pilot' ) . '</h3>';
 		echo '<p>' . esc_html__( 'Copy this whole command and paste it into Claude Code:', 'wp-nc-pilot' ) . '</p>';
-		$cc_command = $this->build_cc_command( $site_url, $username, $new_pass );
+		$cc_command = $this->build_cc_command( $mcp_url, $token );
 		$this->render_copy_box( 'ncpilot-cc', $cc_command );
 
 		// --- Claude Desktop JSON ---
 		echo '<h3>' . esc_html__( 'For Claude Desktop app', 'wp-nc-pilot' ) . '</h3>';
 		echo '<p>' . esc_html__( 'Prefer the Claude Desktop app? Open Settings → Developer → Edit Config, and add this inside "mcpServers":', 'wp-nc-pilot' ) . '</p>';
-		$desktop_json = $this->build_desktop_json( $site_url, $username, $new_pass );
+		$desktop_json = $this->build_desktop_json( $mcp_url, $token );
 		$this->render_copy_box( 'ncpilot-desktop', $desktop_json );
 
 		echo '<p>' . esc_html__( 'After you run it, come back here — the status above turns green once Claude connects.', 'wp-nc-pilot' ) . '</p>';
@@ -253,6 +256,11 @@ class NCPilot_Settings_Page {
 			NCPilot_Security::OPT_DELETE,
 			__( 'Let Claude delete posts, pages, or media', 'wp-nc-pilot' ),
 			__( '⚠️ Permanent. Deleted items go to the Trash where possible, but treat this as permanent.', 'wp-nc-pilot' )
+		);
+		$this->render_toggle_row(
+			NCPilot_Security::OPT_UPLOAD,
+			__( 'Let Claude upload media', 'wp-nc-pilot' ),
+			__( 'Claude can add images and files to your Media Library, either from a web link or by uploading a file from your computer. Only file types WordPress already allows are accepted.', 'wp-nc-pilot' )
 		);
 
 		echo '</tbody></table>';
@@ -297,26 +305,21 @@ class NCPilot_Settings_Page {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Build the `claude mcp add` command for Claude Code.
+	 * Build the `claude mcp add` command for Claude Code (remote HTTP MCP).
 	 *
-	 * @param string $site_url Live site URL.
-	 * @param string $username Current username.
-	 * @param string $app_pass Plaintext app password.
+	 * @param string $mcp_url The /mcp endpoint URL.
+	 * @param string $token   Base64 HTTP Basic token (user:app_pass).
 	 * @return string
 	 */
-	private function build_cc_command( $site_url, $username, $app_pass ) {
+	private function build_cc_command( $mcp_url, $token ) {
 		// Shell-escape every value: the user pastes this into a terminal, so a
-		// site URL or username containing shell metacharacters must not be able
-		// to alter the command.
+		// URL or token must not be able to alter the command.
 		return sprintf(
-			"claude mcp add wp-nc-pilot \\\n"
-			. "  -e WP_URL=%s \\\n"
-			. "  -e WP_USER=%s \\\n"
-			. "  -e WP_APP_PASS=%s \\\n"
-			. "  -- npx wp-nc-pilot-connector",
-			$this->shell_arg( $site_url ),
-			$this->shell_arg( $username ),
-			$this->shell_arg( $app_pass )
+			"claude mcp add --transport http wp-nc-pilot \\\n"
+			. "  %s \\\n"
+			. "  --header %s",
+			$this->shell_arg( $mcp_url ),
+			$this->shell_arg( 'Authorization: Basic ' . $token )
 		);
 	}
 
@@ -335,23 +338,20 @@ class NCPilot_Settings_Page {
 
 	/**
 	 * Build the Claude Desktop JSON snippet (the "wp-nc-pilot" entry that goes
-	 * inside the user's "mcpServers" object).
+	 * inside the user's "mcpServers" object) for a remote HTTP MCP server.
 	 *
-	 * @param string $site_url Live site URL.
-	 * @param string $username Current username.
-	 * @param string $app_pass Plaintext app password.
+	 * @param string $mcp_url The /mcp endpoint URL.
+	 * @param string $token   Base64 HTTP Basic token (user:app_pass).
 	 * @return string
 	 */
-	private function build_desktop_json( $site_url, $username, $app_pass ) {
+	private function build_desktop_json( $mcp_url, $token ) {
 		$config = array(
 			'mcpServers' => array(
 				'wp-nc-pilot' => array(
-					'command' => 'npx',
-					'args'    => array( 'wp-nc-pilot-connector' ),
-					'env'     => array(
-						'WP_URL'      => $site_url,
-						'WP_USER'     => $username,
-						'WP_APP_PASS' => $app_pass,
+					'type'    => 'http',
+					'url'     => $mcp_url,
+					'headers' => array(
+						'Authorization' => 'Basic ' . $token,
 					),
 				),
 			),
@@ -402,14 +402,5 @@ class NCPilot_Settings_Page {
 	 */
 	private function page_url() {
 		return admin_url( 'admin.php?page=' . self::MENU_SLUG );
-	}
-
-	/**
-	 * The site's home URL, trimmed of a trailing slash for clean commands.
-	 *
-	 * @return string
-	 */
-	private function site_url() {
-		return untrailingslashit( home_url() );
 	}
 }

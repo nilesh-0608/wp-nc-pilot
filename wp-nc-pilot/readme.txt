@@ -2,13 +2,13 @@
 Contributors: wpncpilot
 Tags: ai, claude, mcp, automation, content
 Requires at least: 5.6
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Manage your WordPress site by talking to Claude. One-click setup — no terminal, no config files.
+Manage your WordPress site by talking to Claude. One-click setup — no terminal, no extra software.
 
 == Description ==
 
@@ -16,23 +16,29 @@ WP NC-Pilot lets you run your website by chatting with Claude. Create posts, edi
 pages, manage media, switch plugins on or off, and (optionally) edit theme files —
 all from a conversation.
 
-Setup is one click. Press "Connect to Claude", copy the command it gives you, and
-paste it into Claude Code or the Claude Desktop app. That's it. No terminal needed
-beforehand, no passwords to invent, no long web addresses to assemble.
+This plugin IS the connection. It turns your site into a secure server that Claude
+talks to directly over the web (a "remote MCP server"). There is nothing to install
+on your computer — no Node, no command-line tools, no helper apps.
+
+Setup is one click. Press "Connect to Claude", copy the command (for Claude Code) or
+the small config snippet (for the Claude Desktop app), and paste it in. That's it.
 
 Everything risky is switched OFF by default. You decide, with plain-language
 toggles, exactly what Claude may do.
 
-This plugin works together with the free `wp-nc-pilot-connector` package, which runs
-on your own computer and relays your requests to your site securely.
-
 == Security ==
 
-* All operations require login via a WordPress Application Password.
-* Risky capabilities (editing theme files, deleting content) are OFF until you turn
-  them on.
+* Claude connects using a WordPress Application Password (standard HTTP Basic auth
+  over HTTPS); every request is authenticated as your user.
+* Risky capabilities (editing theme files, deleting content, uploading media) are
+  OFF until you turn them on.
 * Theme file edits are confined to your active theme and every file is backed up
   before it is changed.
+* Uploads are restricted to file types WordPress already allows; executable/script
+  files are rejected, and the real file contents are checked against the extension.
+* Note for nginx hosts: theme-file backups live in
+  wp-content/uploads/wp-nc-pilot-backups/. Apache is protected by a bundled
+  .htaccess; on nginx, add a rule to deny that folder if your uploads are public.
 
 == Installation ==
 
@@ -42,6 +48,21 @@ on your own computer and relays your requests to your site securely.
 4. Copy the command shown and paste it into Claude.
 
 == Changelog ==
+
+= 2.0.0 =
+* Major: the plugin is now a self-contained remote MCP server. Claude Code and
+  Claude Desktop connect directly to the site over HTTPS — the separate
+  `wp-nc-pilot-connector` (Node/npm) helper is no longer needed and has been
+  retired. The setup command on the settings page now uses
+  `claude mcp add --transport http`.
+* New: POST /ncpilot/v1/mcp — JSON-RPC 2.0 endpoint implementing initialize,
+  tools/list, and tools/call. Tool calls are dispatched internally to the same
+  REST routes, so all capability toggles and permission checks are unchanged.
+* New: upload media (from a public URL or by uploading a local file), gated by a
+  new "Let Claude upload media" toggle (off by default). Uploads are type-checked
+  against the file's real contents to block executable/script files.
+* Upgrading: after updating, click "Connect to Claude" again to get the new
+  one-paste setup command, then re-add the connection in Claude.
 
 = 1.0.1 =
 * Security hardening: delete endpoint now also checks the delete capability;

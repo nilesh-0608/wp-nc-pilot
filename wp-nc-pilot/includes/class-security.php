@@ -26,6 +26,7 @@ class NCPilot_Security {
 	const OPT_EDIT_THEME  = 'ncpilot_cap_edit_theme';
 	const OPT_PLUGINS     = 'ncpilot_cap_plugins';
 	const OPT_DELETE      = 'ncpilot_cap_delete';
+	const OPT_UPLOAD      = 'ncpilot_cap_upload';
 
 	/** Timestamp (unix) of the connector's last successful /status ping. */
 	const OPT_LAST_SEEN   = 'ncpilot_last_seen';
@@ -42,6 +43,7 @@ class NCPilot_Security {
 			self::OPT_EDIT_THEME => '',
 			self::OPT_PLUGINS    => '',
 			self::OPT_DELETE     => '',
+			self::OPT_UPLOAD     => '',
 		);
 	}
 
@@ -77,6 +79,7 @@ class NCPilot_Security {
 			'edit_theme_files'     => self::is_enabled( self::OPT_EDIT_THEME ),
 			'manage_plugins'       => self::is_enabled( self::OPT_PLUGINS ),
 			'delete_content'       => self::is_enabled( self::OPT_DELETE ),
+			'upload_media'         => self::is_enabled( self::OPT_UPLOAD ),
 		);
 	}
 
@@ -114,6 +117,19 @@ class NCPilot_Security {
 	 * @return bool
 	 */
 	public static function can_ping() {
+		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * Permission callback for the MCP endpoint. Kept separate from can_ping so
+	 * the MCP server's auth requirement is explicit and cannot be loosened by a
+	 * change to the status-ping gate. The MCP server can drive every capability,
+	 * so it requires full admin (manage_options); each individual tool is still
+	 * gated by its own route's permission check at dispatch time.
+	 *
+	 * @return bool
+	 */
+	public static function can_use_mcp() {
 		return current_user_can( 'manage_options' );
 	}
 
@@ -322,6 +338,33 @@ class NCPilot_Security {
 		}
 		if ( ! self::is_enabled( $toggle_key ) ) {
 			return new WP_Error( 'ncpilot_toggle_off', $toggle_msg, array( 'status' => 403 ) );
+		}
+		return true;
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Media uploads (Phase 6)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Permission: can upload media (upload_files cap + the upload toggle).
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function can_upload_media() {
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return new WP_Error(
+				'ncpilot_forbidden',
+				__( 'Your WordPress user is not allowed to upload files.', 'wp-nc-pilot' ),
+				array( 'status' => 403 )
+			);
+		}
+		if ( ! self::is_enabled( self::OPT_UPLOAD ) ) {
+			return new WP_Error(
+				'ncpilot_toggle_off',
+				__( 'Uploading media is switched off. Turn on "Let Claude upload media" on the WP NC-Pilot settings page.', 'wp-nc-pilot' ),
+				array( 'status' => 403 )
+			);
 		}
 		return true;
 	}
