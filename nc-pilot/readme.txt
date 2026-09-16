@@ -1,5 +1,5 @@
 === NC-Pilot ===
-Contributors: wpncpilot
+Contributors: nilesh060895
 Tags: ai, claude, mcp, automation, content
 Requires at least: 5.6
 Tested up to: 7.1
