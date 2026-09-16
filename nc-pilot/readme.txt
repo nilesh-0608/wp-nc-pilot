@@ -2,7 +2,7 @@
 Contributors: wpncpilot
 Tags: ai, claude, mcp, automation, content
 Requires at least: 5.6
-Tested up to: 6.9
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 2.1.0
 License: GPLv2 or later
@@ -25,6 +25,22 @@ the small config snippet (for the Claude Desktop app), and paste it in. That's i
 
 Everything risky is switched OFF by default. You decide, with plain-language
 toggles, exactly what Claude may do.
+
+NC-Pilot is an independent project. It is not affiliated with, endorsed by, or
+sponsored by Anthropic. "Claude" is a trademark of Anthropic, PBC.
+
+== External Services ==
+
+This plugin does not send your site's data to any third-party service on its
+own. It works the other way round: your Claude client (Claude Code or the
+Claude Desktop app, running on your machine or Anthropic's servers) connects
+*inbound* to your site's REST endpoint using an Application Password you create.
+What Claude reads or changes is controlled by the capability toggles on the
+settings page.
+
+The only outbound request the plugin ever makes is when you (through Claude)
+ask it to upload media from a public URL. In that case the plugin downloads
+that one file from the URL you supplied. No other data leaves your site.
 
 == Security ==
 
