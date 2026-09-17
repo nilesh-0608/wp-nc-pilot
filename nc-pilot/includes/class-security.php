@@ -27,6 +27,7 @@ class NCPilot_Security {
 	const OPT_PLUGINS     = 'ncpilot_cap_plugins';
 	const OPT_DELETE      = 'ncpilot_cap_delete';
 	const OPT_UPLOAD      = 'ncpilot_cap_upload';
+	const OPT_INSTALL     = 'ncpilot_cap_install';
 
 	/** Timestamp (unix) of the connector's last successful /status ping. */
 	const OPT_LAST_SEEN   = 'ncpilot_last_seen';
@@ -44,6 +45,7 @@ class NCPilot_Security {
 			self::OPT_PLUGINS    => '',
 			self::OPT_DELETE     => '',
 			self::OPT_UPLOAD     => '',
+			self::OPT_INSTALL    => '',
 		);
 	}
 
@@ -80,6 +82,7 @@ class NCPilot_Security {
 			'manage_plugins'       => self::is_enabled( self::OPT_PLUGINS ),
 			'delete_content'       => self::is_enabled( self::OPT_DELETE ),
 			'upload_media'         => self::is_enabled( self::OPT_UPLOAD ),
+			'install_plugins'      => self::is_enabled( self::OPT_INSTALL ),
 		);
 	}
 
@@ -363,6 +366,37 @@ class NCPilot_Security {
 			return new WP_Error(
 				'ncpilot_toggle_off',
 				__( 'Uploading media is switched off. Turn on "Let Claude upload media" on the NC-Pilot settings page.', 'nc-pilot' ),
+				array( 'status' => 403 )
+			);
+		}
+		return true;
+	}
+
+	/**
+	 * Permission: can install plugins from WordPress.org (install_plugins cap,
+	 * the install toggle, and the host must allow file modifications).
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function can_install_plugins() {
+		if ( ! current_user_can( 'install_plugins' ) ) {
+			return new WP_Error(
+				'ncpilot_forbidden',
+				__( 'Your WordPress user is not allowed to install plugins.', 'nc-pilot' ),
+				array( 'status' => 403 )
+			);
+		}
+		if ( ! self::is_enabled( self::OPT_INSTALL ) ) {
+			return new WP_Error(
+				'ncpilot_toggle_off',
+				__( 'Installing plugins is switched off. Turn on "Let Claude install plugins" on the NC-Pilot settings page.', 'nc-pilot' ),
+				array( 'status' => 403 )
+			);
+		}
+		if ( ( defined( 'DISALLOW_FILE_MODS' ) && DISALLOW_FILE_MODS ) || ! wp_is_file_mod_allowed( 'ncpilot_install_plugin' ) ) {
+			return new WP_Error(
+				'ncpilot_file_mods_disabled',
+				__( 'This host does not allow installing plugins from within WordPress (DISALLOW_FILE_MODS is set).', 'nc-pilot' ),
 				array( 'status' => 403 )
 			);
 		}

@@ -4,7 +4,7 @@ Tags: ai, claude, mcp, automation, content
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,8 +13,8 @@ Manage your WordPress site by talking to Claude. One-click setup — no terminal
 == Description ==
 
 NC-Pilot lets you run your website by chatting with Claude. Create posts, edit
-pages, manage media, switch plugins on or off, and (optionally) edit theme files —
-all from a conversation.
+pages, manage media, switch plugins on or off, install plugins from WordPress.org,
+and (optionally) edit theme files — all from a conversation.
 
 This plugin IS the connection. It turns your site into a secure server that Claude
 talks to directly over the web (a "remote MCP server"). There is nothing to install
@@ -38,16 +38,25 @@ Claude Desktop app, running on your machine or Anthropic's servers) connects
 What Claude reads or changes is controlled by the capability toggles on the
 settings page.
 
-The only outbound request the plugin ever makes is when you (through Claude)
-ask it to upload media from a public URL. In that case the plugin downloads
-that one file from the URL you supplied. No other data leaves your site.
+The plugin makes outbound requests in only two cases, both started by you:
+
+* Uploading media from a public URL: the plugin downloads that one file from
+  the URL you supplied.
+* Searching for or installing a plugin (when the "install plugins" toggle is
+  on): the plugin queries the official WordPress.org plugin directory API
+  (api.wordpress.org) and downloads the package from downloads.wordpress.org,
+  exactly as wp-admin > Plugins > Add New does. Packages from any other host
+  are refused. See https://wordpress.org/about/privacy/ for WordPress.org's
+  privacy policy.
+
+No other data leaves your site.
 
 == Security ==
 
 * Claude connects using a WordPress Application Password (standard HTTP Basic auth
   over HTTPS); every request is authenticated as your user.
-* Risky capabilities (editing theme files, deleting content, uploading media) are
-  OFF until you turn them on.
+* Risky capabilities (editing theme files, deleting content, uploading media,
+  installing plugins) are OFF until you turn them on.
 * Theme file edits are confined to your active theme and every file is backed up
   before it is changed.
 * Uploads are restricted to file types WordPress already allows; executable/script
@@ -64,6 +73,17 @@ that one file from the URL you supplied. No other data leaves your site.
 4. Copy the command shown and paste it into Claude.
 
 == Changelog ==
+
+= 2.2.0 =
+* New: "Let Claude install plugins" toggle (off by default). Claude can search
+  the official WordPress.org directory and install plugins from it. Only
+  WordPress.org packages are accepted; activation after install still requires
+  the separate "turn plugins on or off" toggle. Respects DISALLOW_FILE_MODS.
+* New MCP tools: search_plugins, install_plugin.
+* New REST: GET /ncpilot/v1/plugin-search, POST /ncpilot/v1/plugin-install.
+* Fix: uninstall now also removes the upload/install toggle options.
+* Bundled GPL-2.0 LICENSE, added Author URI, trademark disclaimer and an
+  External Services section to the readme.
 
 = 2.1.0 =
 * Renamed to "NC-Pilot" (slug nc-pilot) for the WordPress.org directory.

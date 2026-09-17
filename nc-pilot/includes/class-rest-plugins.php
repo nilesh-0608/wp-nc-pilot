@@ -6,7 +6,7 @@
  * endpoint can do this too, but it can't honour our own "manage plugins"
  * capability toggle — so we wrap it here and enforce the toggle server-side.
  *
- * Installing new plugins is intentionally NOT supported (activation only).
+ * Installing new plugins lives in NCPilot_REST_Plugin_Install (own toggle).
  *
  * @package WP_NC_Pilot
  */

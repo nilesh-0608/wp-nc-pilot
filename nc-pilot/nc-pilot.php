@@ -3,7 +3,7 @@
  * Plugin Name:       NC-Pilot
  * Plugin URI:        https://github.com/nilesh-0608/wp-nc-pilot
  * Description:       Manage your WordPress site by talking to Claude. One-click setup, no terminal, no config files. A self-contained remote MCP server — Claude connects directly to your site over HTTPS.
- * Version:           2.1.0
+ * Version:           2.2.0
  * Requires at least: 5.6
  * Requires PHP:      7.4
  * Author:            NC-Pilot
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NCPILOT_VERSION', '2.1.0' );
+define( 'NCPILOT_VERSION', '2.2.0' );
 define( 'NCPILOT_PLUGIN_FILE', __FILE__ );
 define( 'NCPILOT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NCPILOT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -40,6 +40,7 @@ define( 'NCPILOT_CONNECTED_WINDOW', 10 * MINUTE_IN_SECONDS );
 require_once NCPILOT_PLUGIN_DIR . 'includes/class-security.php';
 require_once NCPILOT_PLUGIN_DIR . 'includes/class-rest-status.php';
 require_once NCPILOT_PLUGIN_DIR . 'includes/class-rest-plugins.php';
+require_once NCPILOT_PLUGIN_DIR . 'includes/class-rest-plugin-install.php';
 require_once NCPILOT_PLUGIN_DIR . 'includes/class-rest-files.php';
 require_once NCPILOT_PLUGIN_DIR . 'includes/class-rest-content.php';
 require_once NCPILOT_PLUGIN_DIR . 'includes/class-rest-media.php';
@@ -53,6 +54,7 @@ function ncpilot_bootstrap() {
 	// REST endpoints.
 	( new NCPilot_REST_Status() )->register_hooks();
 	( new NCPilot_REST_Plugins() )->register_hooks();
+	( new NCPilot_REST_Plugin_Install() )->register_hooks();
 	( new NCPilot_REST_Files() )->register_hooks();
 	( new NCPilot_REST_Content() )->register_hooks();
 	( new NCPilot_REST_Media() )->register_hooks();

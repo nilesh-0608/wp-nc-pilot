@@ -18,6 +18,8 @@ $ncpilot_options = array(
 	'ncpilot_cap_edit_theme',
 	'ncpilot_cap_plugins',
 	'ncpilot_cap_delete',
+	'ncpilot_cap_upload',
+	'ncpilot_cap_install',
 	'ncpilot_last_seen',
 );
 

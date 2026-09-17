@@ -44,6 +44,7 @@ with plain-language toggles, exactly what Claude may do:
 | Turn plugins on/off            | off     | Activate/deactivate installed plugins            |
 | Delete posts, pages, or media  | off     | Remove content (to Trash where possible)         |
 | Upload media                   | off     | Add images/files (from a URL or your computer)   |
+| Install plugins                | off     | Search WordPress.org and install from it only    |
 
 Creating and editing posts and pages works as soon as you connect (it only needs
 your normal WordPress permissions). New posts and pages are saved as **drafts**

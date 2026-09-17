@@ -322,6 +322,10 @@ class NCPilot_REST_MCP {
 				return $this->tool_plugin( 'activate', $args );
 			case 'deactivate_plugin':
 				return $this->tool_plugin( 'deactivate', $args );
+			case 'search_plugins':
+				return $this->tool_search_plugins( $args );
+			case 'install_plugin':
+				return $this->tool_install_plugin( $args );
 			case 'list_theme_files':
 				return $this->tool_list_theme_files();
 			case 'read_theme_file':
@@ -609,6 +613,72 @@ class NCPilot_REST_MCP {
 			return 'Activated "' . $name . '" (' . $version . '). Active: ' . $active . '.';
 		}
 		return 'Deactivated "' . $name . '". Active: ' . $active . '.';
+	}
+
+	/**
+	 * search_plugins: query the WordPress.org directory.
+	 *
+	 * @param array $args Args (query, per_page).
+	 * @return string
+	 * @throws Exception When query missing.
+	 */
+	private function tool_search_plugins( array $args ) {
+		$query = $this->require_string( $args, 'query' );
+		$r     = $this->rest(
+			'GET',
+			'/ncpilot/v1/plugin-search',
+			array(
+				'q'        => $query,
+				'per_page' => isset( $args['per_page'] ) ? max( 1, min( 20, (int) $args['per_page'] ) ) : 10,
+			)
+		);
+		$items = isset( $r['items'] ) && is_array( $r['items'] ) ? $r['items'] : array();
+		if ( empty( $items ) ) {
+			return 'No WordPress.org plugins found for "' . $query . '".';
+		}
+		$lines = array();
+		foreach ( $items as $p ) {
+			$lines[] = sprintf(
+				'%s %s (%s) v%s - %s/5, %s active installs, tested to %s%s',
+				! empty( $p['installed'] ) ? '[installed]' : '-',
+				$this->strip( isset( $p['name'] ) ? $p['name'] : '' ),
+				isset( $p['slug'] ) ? $p['slug'] : '',
+				isset( $p['version'] ) ? $p['version'] : '?',
+				isset( $p['rating'] ) ? round( $p['rating'] / 20, 1 ) : '?',
+				isset( $p['active_installs'] ) ? number_format_i18n( (int) $p['active_installs'] ) : '?',
+				isset( $p['tested'] ) && '' !== $p['tested'] ? $p['tested'] : '?',
+				! empty( $p['description'] ) ? "\n    " . $this->strip( $p['description'] ) : ''
+			);
+		}
+		$total = isset( $r['total'] ) ? (int) $r['total'] : count( $items );
+		return count( $items ) . ' of ' . $total . " results. Use the slug in parentheses with install_plugin:\n" . implode( "\n", $lines );
+	}
+
+	/**
+	 * install_plugin: install from WordPress.org by slug.
+	 *
+	 * @param array $args Args (slug, activate).
+	 * @return string
+	 * @throws Exception When slug missing.
+	 */
+	private function tool_install_plugin( array $args ) {
+		$slug = $this->require_string( $args, 'slug' );
+		$r    = $this->rest(
+			'POST',
+			'/ncpilot/v1/plugin-install',
+			array(
+				'slug'     => $slug,
+				'activate' => ! empty( $args['activate'] ),
+			)
+		);
+		$name = isset( $r['name'] ) ? $r['name'] : $slug;
+		$out  = 'Installed "' . $name . '" v' . ( isset( $r['version'] ) ? $r['version'] : '?' )
+			. ' as ' . ( isset( $r['plugin'] ) ? $r['plugin'] : $slug ) . '. Active: '
+			. ( ! empty( $r['active'] ) ? 'true' : 'false' ) . '.';
+		if ( ! empty( $r['notice'] ) ) {
+			$out .= "\n" . $r['notice'];
+		}
+		return $out;
 	}
 
 	/**
@@ -950,6 +1020,26 @@ class NCPilot_REST_MCP {
 				'Turn off an active plugin. Requires the "manage plugins" toggle. Use the plugin path from list_plugins.',
 				array( 'plugin' => $this->prop_string( 'Plugin path, e.g. "akismet/akismet".' ) ),
 				array( 'plugin' )
+			),
+			$this->spec(
+				'search_plugins',
+				'Search WordPress.org plugins',
+				'Search the official WordPress.org plugin directory. Returns slugs to use with install_plugin. Requires the site owner to enable the "install plugins" toggle.',
+				array(
+					'query'    => $this->prop_string( 'Words to search for, e.g. "contact form".' ),
+					'per_page' => $this->prop_int( 'How many results (default 10, max 20).', 1, 20 ),
+				),
+				array( 'query' )
+			),
+			$this->spec(
+				'install_plugin',
+				'Install a plugin from WordPress.org',
+				'Install a plugin from the official WordPress.org directory by slug (only WordPress.org packages are accepted). Requires the "install plugins" toggle. Set activate=true to also turn it on, which additionally requires the "manage plugins" toggle.',
+				array(
+					'slug'     => $this->prop_string( 'WordPress.org plugin slug, e.g. "akismet" (from search_plugins or the plugin URL).' ),
+					'activate' => $this->prop_bool( 'Also activate after installing (default false).' ),
+				),
+				array( 'slug' )
 			),
 			$this->spec(
 				'list_theme_files',

@@ -252,7 +252,7 @@ class NCPilot_Settings_Page {
 		$this->render_toggle_row(
 			NCPilot_Security::OPT_PLUGINS,
 			__( 'Let Claude turn plugins on or off', 'nc-pilot' ),
-			__( 'Claude can activate or deactivate plugins you already installed. It cannot install new ones.', 'nc-pilot' )
+			__( 'Claude can activate or deactivate plugins you already installed. Installing new ones is a separate toggle below.', 'nc-pilot' )
 		);
 		$this->render_toggle_row(
 			NCPilot_Security::OPT_DELETE,
@@ -263,6 +263,11 @@ class NCPilot_Settings_Page {
 			NCPilot_Security::OPT_UPLOAD,
 			__( 'Let Claude upload media', 'nc-pilot' ),
 			__( 'Claude can add images and files to your Media Library, either from a web link or by uploading a file from your computer. Only file types WordPress already allows are accepted.', 'nc-pilot' )
+		);
+		$this->render_toggle_row(
+			NCPilot_Security::OPT_INSTALL,
+			__( 'Let Claude install plugins', 'nc-pilot' ),
+			__( '⚠️ Advanced. Claude can search the official WordPress.org directory and install plugins from it. Nothing is downloaded from anywhere else. Installed plugins stay inactive unless "turn plugins on or off" is also enabled.', 'nc-pilot' )
 		);
 
 		echo '</tbody></table>';
