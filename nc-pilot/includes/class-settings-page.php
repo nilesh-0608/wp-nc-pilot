@@ -4,8 +4,11 @@
  *
  * Responsibilities:
  *  - Top-level "NC-Pilot" admin menu.
- *  - "Connect to Claude" button that mints an Application Password.
- *  - Pre-filled, copy-paste setup commands for Claude Code AND Claude Desktop.
+ *  - Guide the user to create an Application Password themselves on their
+ *    own profile screen (core UI). The plugin never creates, receives, or
+ *    stores that password.
+ *  - Build copy-paste setup commands for Claude Code AND Claude Desktop
+ *    entirely in the browser (assets/js/admin.js).
  *  - Live connection status badge.
  *  - Capability toggles (all OFF by default), each with a plain-language warning.
  *
@@ -18,26 +21,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class NCPilot_Settings_Page {
 
-	const MENU_SLUG       = 'nc-pilot';
-	const APP_PASS_NAME   = 'NC-Pilot MCP';
-	const NONCE_CONNECT   = 'ncpilot_connect';
-	const NONCE_TOGGLES   = 'ncpilot_toggles';
-	const TRANSIENT_PREFIX = 'ncpilot_newpass_';
+	const MENU_SLUG     = 'nc-pilot';
+	const APP_PASS_NAME = 'NC-Pilot';
+	const NONCE_TOGGLES = 'ncpilot_toggles';
+	const SCRIPT_HANDLE = 'ncpilot-admin';
+
+	/**
+	 * Admin page hook suffix, so assets load only on our page.
+	 *
+	 * @var string
+	 */
+	private $page_hook = '';
 
 	/**
 	 * Hook into admin.
 	 */
 	public function register_hooks() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
-		add_action( 'admin_post_ncpilot_connect', array( $this, 'handle_connect' ) );
 		add_action( 'admin_post_ncpilot_save_toggles', array( $this, 'handle_save_toggles' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
 	/**
 	 * Register the top-level menu.
 	 */
 	public function add_menu() {
-		add_menu_page(
+		$this->page_hook = (string) add_menu_page(
 			__( 'NC-Pilot', 'nc-pilot' ),
 			__( 'NC-Pilot', 'nc-pilot' ),
 			'manage_options',
@@ -48,53 +57,36 @@ class NCPilot_Settings_Page {
 		);
 	}
 
+	/**
+	 * Load the setup script (builds the commands in the browser) on our page only.
+	 *
+	 * @param string $hook_suffix Current admin page hook.
+	 */
+	public function enqueue_assets( $hook_suffix ) {
+		if ( '' === $this->page_hook || $hook_suffix !== $this->page_hook ) {
+			return;
+		}
+		wp_enqueue_script(
+			self::SCRIPT_HANDLE,
+			NCPILOT_PLUGIN_URL . 'assets/js/admin.js',
+			array(),
+			NCPILOT_VERSION,
+			true
+		);
+		wp_localize_script(
+			self::SCRIPT_HANDLE,
+			'ncpilotSetup',
+			array(
+				'mcpUrl'        => rest_url( NCPILOT_REST_NS . '/mcp' ),
+				'missingFields' => __( 'Enter your username and the Application Password first.', 'nc-pilot' ),
+				'copied'        => __( 'Copied!', 'nc-pilot' ),
+			)
+		);
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Form handlers (admin-post.php targets)
 	 * ------------------------------------------------------------------- */
-
-	/**
-	 * Handle the "Connect to Claude" button: create an Application Password.
-	 */
-	public function handle_connect() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'nc-pilot' ) );
-		}
-		check_admin_referer( self::NONCE_CONNECT );
-
-		$user_id = get_current_user_id();
-
-		// Some hosts disable Application Passwords (e.g. non-HTTPS, or a filter).
-		if ( ! function_exists( 'wp_is_application_passwords_available' ) || ! wp_is_application_passwords_available() ) {
-			$this->redirect_with_error(
-				__( 'Application Passwords are turned off on this site. They usually require HTTPS. Ask your host to enable them, then try again.', 'nc-pilot' )
-			);
-			return;
-		}
-
-		$created = WP_Application_Passwords::create_new_application_password(
-			$user_id,
-			array( 'name' => self::APP_PASS_NAME )
-		);
-
-		if ( is_wp_error( $created ) ) {
-			$this->redirect_with_error( $created->get_error_message() );
-			return;
-		}
-
-		// $created = array( $plaintext_password, $item ). Show the plaintext ONCE.
-		$plaintext = isset( $created[0] ) ? $created[0] : '';
-
-		// Short-lived: the page is loaded immediately after this redirect, which
-		// pops and deletes it. Keep the database exposure window small.
-		set_transient(
-			self::TRANSIENT_PREFIX . $user_id,
-			$plaintext,
-			2 * MINUTE_IN_SECONDS
-		);
-
-		wp_safe_redirect( add_query_arg( 'ncpilot_connected', '1', $this->page_url() ) );
-		exit;
-	}
 
 	/**
 	 * Save the capability toggles.
@@ -128,27 +120,22 @@ class NCPilot_Settings_Page {
 			return;
 		}
 
-		$user        = wp_get_current_user();
-		$new_pass    = $this->pop_new_password( $user->ID );
-		// Display-only flags set on our own admin-post redirects; no state change
-		// here, so a nonce is not required to read them.
-		$has_error   = isset( $_GET['ncpilot_error'] ) ? sanitize_text_field( wp_unslash( $_GET['ncpilot_error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$just_saved  = isset( $_GET['ncpilot_saved'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$user = wp_get_current_user();
+		// Display-only flag set on our own admin-post redirect; no state change
+		// here, so a nonce is not required to read it.
+		$just_saved   = isset( $_GET['ncpilot_saved'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$is_connected = NCPilot_Security::is_connected();
 
 		echo '<div class="wrap">';
 		echo '<h1>' . esc_html__( 'NC-Pilot', 'nc-pilot' ) . '</h1>';
 		echo '<p>' . esc_html__( 'Let Claude help you manage this website. Set it up once below, then talk to Claude to create posts, edit pages, and more.', 'nc-pilot' ) . '</p>';
 
-		if ( $has_error ) {
-			echo '<div class="notice notice-error"><p>' . esc_html( $has_error ) . '</p></div>';
-		}
 		if ( $just_saved ) {
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'nc-pilot' ) . '</p></div>';
 		}
 
 		$this->render_status_badge( $is_connected );
-		$this->render_connect_section( $user, $new_pass );
+		$this->render_connect_section( $user );
 		$this->render_toggles_section();
 
 		echo '</div>';
@@ -181,49 +168,83 @@ class NCPilot_Settings_Page {
 	}
 
 	/**
-	 * "Connect to Claude" section: button before, commands after.
+	 * "Connect to Claude" section.
 	 *
-	 * @param WP_User     $user     Current user.
-	 * @param string|null $new_pass Freshly minted plaintext password, or null.
+	 * The user creates an Application Password on the core profile screen and
+	 * pastes it here. admin.js assembles the commands in the browser; this form
+	 * has no action and is never submitted to the server.
+	 *
+	 * @param WP_User $user Current user.
 	 */
-	private function render_connect_section( $user, $new_pass ) {
+	private function render_connect_section( $user ) {
 		echo '<hr><h2>' . esc_html__( '1. Connect to Claude', 'nc-pilot' ) . '</h2>';
 
-		if ( null === $new_pass ) {
-			echo '<p>' . esc_html__( 'Click the button to create a secure password for Claude. You will see a ready-to-paste command next.', 'nc-pilot' ) . '</p>';
-			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-			echo '<input type="hidden" name="action" value="ncpilot_connect">';
-			wp_nonce_field( self::NONCE_CONNECT );
-			submit_button( __( 'Connect to Claude', 'nc-pilot' ), 'primary large' );
-			echo '</form>';
+		if ( ! function_exists( 'wp_is_application_passwords_available' ) || ! wp_is_application_passwords_available() ) {
+			echo '<div class="notice notice-error inline"><p>'
+				. esc_html__( 'Application Passwords are turned off on this site. They usually require HTTPS. Ask your host to enable them, then come back here.', 'nc-pilot' )
+				. '</p></div>';
 			return;
 		}
 
-		// We just generated a password — show it once, plus pre-filled commands.
-		$username = $user->user_login;
-		$mcp_url  = rest_url( NCPILOT_REST_NS . '/mcp' );
-		// HTTP Basic token. WordPress strips spaces from application passwords
-		// when authenticating, so we send the compact (space-free) form.
-		$token    = base64_encode( $username . ':' . str_replace( ' ', '', (string) $new_pass ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		$this->render_app_password_steps();
+		$this->render_command_builder( $user );
+	}
 
-		echo '<div class="notice notice-warning inline"><p><strong>'
-			. esc_html__( 'Copy this now — it is shown only once.', 'nc-pilot' )
-			. '</strong> ' . esc_html__( 'For your security, WordPress will not show this password again. If you lose it, just click Connect again to make a new one.', 'nc-pilot' )
+	/**
+	 * Step A: how to create an Application Password with core's own screen.
+	 */
+	private function render_app_password_steps() {
+		$profile_url = admin_url( 'profile.php#application-passwords-section' );
+
+		echo '<h3>' . esc_html__( 'Step A — Create an Application Password', 'nc-pilot' ) . '</h3>';
+		echo '<ol>';
+		echo '<li><a href="' . esc_url( $profile_url ) . '" target="_blank" rel="noopener">'
+			. esc_html__( 'Open your profile → Application Passwords', 'nc-pilot' ) . '</a></li>';
+		echo '<li>' . esc_html(
+			sprintf(
+				/* translators: %s: suggested application password name. */
+				__( 'Type a name such as "%s" and click "Add New Application Password".', 'nc-pilot' ),
+				self::APP_PASS_NAME
+			)
+		) . '</li>';
+		echo '<li>' . esc_html__( 'Copy the password WordPress shows you (it is shown only once).', 'nc-pilot' ) . '</li>';
+		echo '</ol>';
+	}
+
+	/**
+	 * Step B: paste the password, get ready-to-paste commands (built client-side).
+	 *
+	 * @param WP_User $user Current user.
+	 */
+	private function render_command_builder( $user ) {
+		echo '<h3>' . esc_html__( 'Step B — Build your setup command', 'nc-pilot' ) . '</h3>';
+		echo '<p>' . esc_html__( 'Paste the password below. It stays in your browser: NC-Pilot never sends it anywhere or saves it.', 'nc-pilot' ) . '</p>';
+
+		echo '<form id="ncpilot-setup-form" autocomplete="off"><table class="form-table" role="presentation"><tbody>';
+		echo '<tr><th scope="row"><label for="ncpilot-username">' . esc_html__( 'Username', 'nc-pilot' ) . '</label></th>';
+		echo '<td><input type="text" id="ncpilot-username" class="regular-text" value="' . esc_attr( $user->user_login ) . '"></td></tr>';
+		echo '<tr><th scope="row"><label for="ncpilot-app-password">' . esc_html__( 'Application Password', 'nc-pilot' ) . '</label></th>';
+		echo '<td><input type="password" id="ncpilot-app-password" class="regular-text" autocomplete="new-password" spellcheck="false"></td></tr>';
+		echo '</tbody></table>';
+		echo '<p><button type="submit" class="button button-primary button-large">' . esc_html__( 'Show my setup commands', 'nc-pilot' ) . '</button></p>';
+		echo '<div id="ncpilot-setup-error" class="notice notice-error inline" hidden><p></p></div>';
+		echo '</form>';
+
+		echo '<div id="ncpilot-setup-output" hidden>';
+		echo '<div class="notice notice-warning inline"><p>'
+			. esc_html__( 'These commands contain your password. Do not share them. If one leaks, revoke that Application Password on your profile screen.', 'nc-pilot' )
 			. '</p></div>';
 
-		// --- Claude Code command ---
 		echo '<h3>' . esc_html__( 'For Claude Code (terminal app)', 'nc-pilot' ) . '</h3>';
 		echo '<p>' . esc_html__( 'Copy this whole command and paste it into Claude Code:', 'nc-pilot' ) . '</p>';
-		$cc_command = $this->build_cc_command( $mcp_url, $token );
-		$this->render_copy_box( 'ncpilot-cc', $cc_command );
+		$this->render_copy_box( 'ncpilot-cc', 4 );
 
-		// --- Claude Desktop JSON ---
 		echo '<h3>' . esc_html__( 'For Claude Desktop app', 'nc-pilot' ) . '</h3>';
 		echo '<p>' . esc_html__( 'Prefer the Claude Desktop app? Open Settings → Developer → Edit Config, and add this inside "mcpServers":', 'nc-pilot' ) . '</p>';
-		$desktop_json = $this->build_desktop_json( $mcp_url, $token );
-		$this->render_copy_box( 'ncpilot-desktop', $desktop_json );
+		$this->render_copy_box( 'ncpilot-desktop', 12 );
 
 		echo '<p>' . esc_html__( 'After you run it, come back here — the status above turns green once Claude connects.', 'nc-pilot' ) . '</p>';
+		echo '</div>';
 	}
 
 	/**
@@ -250,14 +271,9 @@ class NCPilot_Settings_Page {
 			__( '⚠️ Advanced. Claude can change your theme\'s code, which can break how your site looks or works. A backup of each file is saved automatically before any change.', 'nc-pilot' )
 		);
 		$this->render_toggle_row(
-			NCPilot_Security::OPT_PLUGINS,
-			__( 'Let Claude turn plugins on or off', 'nc-pilot' ),
-			__( 'Claude can activate or deactivate plugins you already installed. Installing new ones is a separate toggle below.', 'nc-pilot' )
-		);
-		$this->render_toggle_row(
 			NCPilot_Security::OPT_DELETE,
 			__( 'Let Claude delete posts, pages, or media', 'nc-pilot' ),
-			__( '⚠️ Permanent. Deleted items go to the Trash where possible, but treat this as permanent.', 'nc-pilot' )
+			__( '⚠️ Permanent. Deleted items go to the Trash where possible, but treat this as permanent. Also allows removing Elementor components and their children.', 'nc-pilot' )
 		);
 		$this->render_toggle_row(
 			NCPilot_Security::OPT_UPLOAD,
@@ -267,7 +283,7 @@ class NCPilot_Settings_Page {
 		$this->render_toggle_row(
 			NCPilot_Security::OPT_INSTALL,
 			__( 'Let Claude install plugins', 'nc-pilot' ),
-			__( '⚠️ Advanced. Claude can search the official WordPress.org directory and install plugins from it. Nothing is downloaded from anywhere else. Installed plugins stay inactive unless "turn plugins on or off" is also enabled.', 'nc-pilot' )
+			__( '⚠️ Advanced. Claude can search the official WordPress.org directory and install plugins from it. Nothing is downloaded from anywhere else. Installed plugins always stay inactive — only you can activate them, from the Plugins screen.', 'nc-pilot' )
 		);
 
 		echo '</tbody></table>';
@@ -292,114 +308,16 @@ class NCPilot_Settings_Page {
 	}
 
 	/**
-	 * A read-only textarea with a Copy button (no external JS needed).
+	 * An empty read-only textarea (filled by admin.js) with a Copy button.
 	 *
-	 * @param string $id      Unique DOM id.
-	 * @param string $content Text to display/copy.
+	 * @param string $id   Unique DOM id.
+	 * @param int    $rows Visible rows.
 	 */
-	private function render_copy_box( $id, $content ) {
-		$rows = max( 3, substr_count( $content, "\n" ) + 1 );
-		echo '<textarea id="' . esc_attr( $id ) . '" readonly rows="' . esc_attr( $rows ) . '" '
-			. 'style="width:100%;max-width:760px;font-family:monospace;" '
-			. 'onclick="this.select();">' . esc_textarea( $content ) . '</textarea>';
-		echo '<p><button type="button" class="button" '
-			. 'onclick="(function(){var t=document.getElementById(\'' . esc_js( $id ) . '\');t.select();document.execCommand(\'copy\');})();">'
+	private function render_copy_box( $id, $rows ) {
+		echo '<textarea id="' . esc_attr( $id ) . '" readonly rows="' . esc_attr( (string) $rows ) . '" '
+			. 'style="width:100%;max-width:760px;font-family:monospace;"></textarea>';
+		echo '<p><button type="button" class="button ncpilot-copy" data-target="' . esc_attr( $id ) . '">'
 			. esc_html__( 'Copy', 'nc-pilot' ) . '</button></p>';
-	}
-
-	/* ---------------------------------------------------------------------
-	 * Command builders
-	 * ------------------------------------------------------------------- */
-
-	/**
-	 * Build the `claude mcp add` command for Claude Code (remote HTTP MCP).
-	 *
-	 * @param string $mcp_url The /mcp endpoint URL.
-	 * @param string $token   Base64 HTTP Basic token (user:app_pass).
-	 * @return string
-	 */
-	private function build_cc_command( $mcp_url, $token ) {
-		// Shell-escape every value: the user pastes this into a terminal, so a
-		// URL or token must not be able to alter the command.
-		return sprintf(
-			"claude mcp add --transport http nc-pilot \\\n"
-			. "  %s \\\n"
-			. "  --header %s",
-			$this->shell_arg( $mcp_url ),
-			$this->shell_arg( 'Authorization: Basic ' . $token )
-		);
-	}
-
-	/**
-	 * Single-quote a value for safe pasting into a POSIX shell.
-	 *
-	 * We avoid escapeshellarg() because it is locale/OS dependent (and uses
-	 * double quotes on Windows); the command is always for a POSIX shell.
-	 *
-	 * @param string $value Raw value.
-	 * @return string Single-quoted, escaped value.
-	 */
-	private function shell_arg( $value ) {
-		return "'" . str_replace( "'", "'\\''", (string) $value ) . "'";
-	}
-
-	/**
-	 * Build the Claude Desktop JSON snippet (the "wp-nc-pilot" entry that goes
-	 * inside the user's "mcpServers" object) for a remote HTTP MCP server.
-	 *
-	 * @param string $mcp_url The /mcp endpoint URL.
-	 * @param string $token   Base64 HTTP Basic token (user:app_pass).
-	 * @return string
-	 */
-	private function build_desktop_json( $mcp_url, $token ) {
-		$config = array(
-			'mcpServers' => array(
-				'nc-pilot' => array(
-					'type'    => 'http',
-					'url'     => $mcp_url,
-					'headers' => array(
-						'Authorization' => 'Basic ' . $token,
-					),
-				),
-			),
-		);
-		return wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
-	}
-
-	/* ---------------------------------------------------------------------
-	 * Small helpers
-	 * ------------------------------------------------------------------- */
-
-	/**
-	 * Pull the one-time plaintext password out of its transient (and delete it).
-	 *
-	 * @param int $user_id User id.
-	 * @return string|null
-	 */
-	private function pop_new_password( $user_id ) {
-		$key  = self::TRANSIENT_PREFIX . $user_id;
-		$pass = get_transient( $key );
-		if ( false === $pass ) {
-			return null;
-		}
-		delete_transient( $key );
-		return $pass;
-	}
-
-	/**
-	 * Redirect back to the page carrying an error message.
-	 *
-	 * @param string $message Human-readable error.
-	 */
-	private function redirect_with_error( $message ) {
-		wp_safe_redirect(
-			add_query_arg(
-				'ncpilot_error',
-				rawurlencode( $message ),
-				$this->page_url()
-			)
-		);
-		exit;
 	}
 
 	/**

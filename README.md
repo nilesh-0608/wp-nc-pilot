@@ -22,8 +22,10 @@ Claude (Code or Desktop)  ──HTTPS / MCP──▶  your WordPress site (this 
 1. **Install the plugin.** In WordPress, go to **Plugins → Add New → Upload
    Plugin**, choose `nc-pilot.zip`, and click **Install Now**, then **Activate**.
 2. **Open NC-Pilot** from the admin menu (the superhero icon).
-3. **Click "Connect to Claude".** It creates a secure password and shows you a
-   ready-to-paste command. (You'll see the password only once — that's normal.)
+3. **Create an Application Password** on your profile screen (the NC-Pilot page
+   links straight to it), then paste it into NC-Pilot. It builds a
+   ready-to-paste command in your browser — the password is never sent to or
+   stored by the plugin.
 4. **Paste the command** into Claude Code, *or* paste the JSON block into your
    Claude Desktop config. Done.
 5. Come back to the NC-Pilot screen — the status turns **green** once Claude
@@ -41,10 +43,9 @@ with plain-language toggles, exactly what Claude may do:
 | ------------------------------ | ------- | ------------------------------------------------ |
 | Read theme files               | off     | Claude can look at your theme's code             |
 | **Edit** theme files           | off     | Claude can change theme code (backups made first)|
-| Turn plugins on/off            | off     | Activate/deactivate installed plugins            |
 | Delete posts, pages, or media  | off     | Remove content (to Trash where possible)         |
 | Upload media                   | off     | Add images/files (from a URL or your computer)   |
-| Install plugins                | off     | Search WordPress.org and install from it only    |
+| Install plugins                | off     | Search WordPress.org and install (stays inactive)|
 
 Creating and editing posts and pages works as soon as you connect (it only needs
 your normal WordPress permissions). New posts and pages are saved as **drafts**
@@ -79,3 +80,22 @@ assets/        Plugin icon + banner artwork
 ## License
 
 GPL-2.0-or-later.
+
+## Elementor pages and components
+
+With Elementor active, NC-Pilot can work with existing Elementor pages:
+
+- `get_elementor_page`: read component IDs, settings, children and a revision token.
+- `add_elementor_component`: add a container, section, column or registered widget at a chosen parent and position.
+- `edit_elementor_component`: update selected controls, preserving other settings and children.
+- `remove_elementor_component`: remove a component and its children (requires the delete-content toggle).
+
+Save the page in Elementor first. Find its ID using `list_pages`, then read it
+before each change and pass the returned `revision`. Stale revisions are rejected.
+Settings use Elementor control names such as `title` for a heading. Supplied
+controls replace their whole value, including nested values. Saves use Elementor's
+document API to invalidate generated CSS and caches. Published pages change
+immediately; page status is preserved. Supported layouts are classic Elementor
+containers, sections, columns and widgets; Atomic elements and nested-widget child
+insertion are not supported. Administrator, per-page edit and Elementor document
+permissions are required.

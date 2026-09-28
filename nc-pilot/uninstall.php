@@ -2,8 +2,9 @@
 /**
  * Uninstall cleanup. Runs only when the user deletes the plugin from wp-admin.
  *
- * Removes our options. We deliberately do NOT revoke Application Passwords here
- * (the user may still want them) and we never touch theme files or their backups.
+ * Removes our options. We never touch Application Passwords (the plugin does
+ * not create them — the user does, on their profile screen), theme files, or
+ * theme-file backups.
  *
  * @package WP_NC_Pilot
  */
@@ -16,7 +17,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 $ncpilot_options = array(
 	'ncpilot_cap_read_theme',
 	'ncpilot_cap_edit_theme',
-	'ncpilot_cap_plugins',
+	'ncpilot_cap_plugins', // Legacy (removed in 2.4.0); cleaned up for older installs.
 	'ncpilot_cap_delete',
 	'ncpilot_cap_upload',
 	'ncpilot_cap_install',
@@ -27,14 +28,8 @@ foreach ( $ncpilot_options as $ncpilot_option ) {
 	delete_option( $ncpilot_option );
 }
 
-// Remove any leftover one-time password transients (normally expired already).
-global $wpdb;
-$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-	"DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_ncpilot\_newpass\_%' OR option_name LIKE '\_transient\_timeout\_ncpilot\_newpass\_%'"
-);
-
 // We deliberately leave in place:
-//  - the Application Password named "NC-Pilot MCP" (revoke it under
+//  - any Application Password you created for NC-Pilot (revoke it under
 //    Users -> Profile -> Application Passwords if you want to cut access), and
 //  - any theme-file backups in wp-content/uploads/wp-nc-pilot-backups/
 //    (so changes remain recoverable after uninstall).

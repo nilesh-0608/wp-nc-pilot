@@ -4,24 +4,27 @@ Tags: ai, claude, mcp, automation, content
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Manage your WordPress site by talking to Claude. One-click setup — no terminal, no extra software.
+Manage your WordPress site by talking to Claude. Simple setup — no extra software to install.
 
 == Description ==
 
 NC-Pilot lets you run your website by chatting with Claude. Create posts, edit
-pages, manage media, switch plugins on or off, install plugins from WordPress.org,
+pages, manage media, install plugins from WordPress.org (you activate them),
 and (optionally) edit theme files — all from a conversation.
 
 This plugin IS the connection. It turns your site into a secure server that Claude
 talks to directly over the web (a "remote MCP server"). There is nothing to install
 on your computer — no Node, no command-line tools, no helper apps.
 
-Setup is one click. Press "Connect to Claude", copy the command (for Claude Code) or
-the small config snippet (for the Claude Desktop app), and paste it in. That's it.
+Setup takes a minute. Create an Application Password on your own profile screen
+(a standard WordPress feature), paste it into the NC-Pilot page, and copy the
+command (for Claude Code) or the small config snippet (for the Claude Desktop app)
+it builds for you. The password stays in your browser; NC-Pilot never creates,
+receives, or stores it.
 
 Everything risky is switched OFF by default. You decide, with plain-language
 toggles, exactly what Claude may do.
@@ -55,8 +58,12 @@ No other data leaves your site.
 
 * Claude connects using a WordPress Application Password (standard HTTP Basic auth
   over HTTPS); every request is authenticated as your user.
+* NC-Pilot does not create users or Application Passwords. You create the
+  Application Password yourself under Users → Profile, and can revoke it there.
 * Risky capabilities (editing theme files, deleting content, uploading media,
   installing plugins) are OFF until you turn them on.
+* NC-Pilot never activates or deactivates plugins. Plugins it installs stay
+  inactive until you activate them from the Plugins screen.
 * Theme file edits are confined to your active theme and every file is backed up
   before it is changed.
 * Uploads are restricted to file types WordPress already allows; executable/script
@@ -69,10 +76,31 @@ No other data leaves your site.
 
 1. In wp-admin, go to Plugins → Add New → Upload Plugin and upload the zip.
 2. Activate it.
-3. Open "NC-Pilot" in the menu and press "Connect to Claude".
-4. Copy the command shown and paste it into Claude.
+3. Open "NC-Pilot" in the menu and follow Step A to create an Application
+   Password on your profile screen.
+4. Paste it into Step B, then copy the command shown and paste it into Claude.
 
 == Changelog ==
+
+= 2.4.0 =
+* Removed: activating and deactivating plugins (the "turn plugins on or off"
+  toggle, the activate_plugin / deactivate_plugin tools and
+  POST /ncpilot/v1/plugin). Plugins installed by Claude always stay inactive
+  until you activate them yourself.
+* Changed: NC-Pilot no longer creates an Application Password. You create one
+  under Users → Profile → Application Passwords and paste it into the setup
+  page; the setup commands are built in your browser and the password is never
+  sent to or stored by the plugin.
+* Upgrading: existing connections keep working. The old "NC-Pilot MCP"
+  Application Password stays valid until you revoke it on your profile screen.
+
+= 2.3.0 =
+* New: inspect Elementor pages and add, edit or remove their components.
+* Preserve unrelated settings and children when editing component controls.
+* Require a fresh page revision before changes and enforce Elementor permissions.
+* Component removal requires the existing delete-content toggle.
+* Save through Elementor's document API to refresh CSS and document caches.
+
 
 = 2.2.0 =
 * New: "Let Claude install plugins" toggle (off by default). Claude can search

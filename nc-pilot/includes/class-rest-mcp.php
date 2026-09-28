@@ -295,6 +295,10 @@ class NCPilot_REST_MCP {
 	 * @throws Exception On unknown tool or any failure.
 	 */
 	private function dispatch_tool( $name, array $args ) {
+		if ( in_array( $name, array( 'get_elementor_page', 'add_elementor_component', 'edit_elementor_component', 'remove_elementor_component' ), true ) ) {
+			$action = explode( '_', $name )[0];
+			return wp_json_encode( $this->rest( 'get' === $action ? 'GET' : 'POST', '/ncpilot/v1/elementor/' . $action, $args ), JSON_PRETTY_PRINT );
+		}
 		switch ( $name ) {
 			case 'check_connection':
 				return $this->tool_check_connection();
@@ -318,10 +322,6 @@ class NCPilot_REST_MCP {
 				return $this->tool_update( '/wp/v2/pages', 'page', $args, array( 'title', 'content', 'status' ) );
 			case 'upload_media':
 				return $this->tool_upload_media( $args );
-			case 'activate_plugin':
-				return $this->tool_plugin( 'activate', $args );
-			case 'deactivate_plugin':
-				return $this->tool_plugin( 'deactivate', $args );
 			case 'search_plugins':
 				return $this->tool_search_plugins( $args );
 			case 'install_plugin':
@@ -589,33 +589,6 @@ class NCPilot_REST_MCP {
 	}
 
 	/**
-	 * activate_plugin / deactivate_plugin.
-	 *
-	 * @param string $action "activate" or "deactivate".
-	 * @param array  $args   Args (plugin).
-	 * @return string
-	 * @throws Exception When plugin missing.
-	 */
-	private function tool_plugin( $action, array $args ) {
-		$plugin = $this->require_string( $args, 'plugin' );
-		$r      = $this->rest(
-			'POST',
-			'/ncpilot/v1/plugin',
-			array(
-				'plugin' => $plugin,
-				'action' => $action,
-			)
-		);
-		$name   = isset( $r['name'] ) ? $r['name'] : $plugin;
-		$active = ! empty( $r['active'] ) ? 'true' : 'false';
-		if ( 'activate' === $action ) {
-			$version = isset( $r['version'] ) ? $r['version'] : '';
-			return 'Activated "' . $name . '" (' . $version . '). Active: ' . $active . '.';
-		}
-		return 'Deactivated "' . $name . '". Active: ' . $active . '.';
-	}
-
-	/**
 	 * search_plugins: query the WordPress.org directory.
 	 *
 	 * @param array $args Args (query, per_page).
@@ -657,7 +630,7 @@ class NCPilot_REST_MCP {
 	/**
 	 * install_plugin: install from WordPress.org by slug.
 	 *
-	 * @param array $args Args (slug, activate).
+	 * @param array $args Args (slug).
 	 * @return string
 	 * @throws Exception When slug missing.
 	 */
@@ -666,10 +639,7 @@ class NCPilot_REST_MCP {
 		$r    = $this->rest(
 			'POST',
 			'/ncpilot/v1/plugin-install',
-			array(
-				'slug'     => $slug,
-				'activate' => ! empty( $args['activate'] ),
-			)
+			array( 'slug' => $slug )
 		);
 		$name = isset( $r['name'] ) ? $r['name'] : $slug;
 		$out  = 'Installed "' . $name . '" v' . ( isset( $r['version'] ) ? $r['version'] : '?' )
@@ -896,10 +866,24 @@ class NCPilot_REST_MCP {
 	 * @return array
 	 */
 	private function tool_specs() {
+		$page = array( 'page_id' => $this->prop_int( 'Existing Elementor page ID. Find it with list_pages.', 1 ) );
+		$revision = array( 'revision' => $this->prop_string( 'Revision from get_elementor_page. Read again before each change.' ) );
+		$target = array_merge( $page, $revision, array( 'component_id' => $this->prop_string( 'Element ID from get_elementor_page.' ) ) );
+		$settings = array( 'type' => 'object', 'additionalProperties' => true, 'description' => 'Elementor control values keyed by control name. Each supplied control replaces its whole value; omitted controls are preserved.' );
 		$status_desc = 'Defaults to draft for new items, for safety.';
 		$status_prop = $this->prop_string( 'draft | publish | pending | private | future. ' . $status_desc );
 
 		return array(
+			$this->spec( 'get_elementor_page', 'Elementor page: inspect components', 'Read nested components, settings, IDs and a revision before editing.', $page, array( 'page_id' ) ),
+			$this->spec( 'add_elementor_component', 'Elementor page: add component', 'Add one component. Root accepts containers/sections; containers accept containers/widgets; sections accept columns; columns accept widgets/inner sections. Published pages change immediately.', array_merge( $page, $revision, array(
+				'el_type' => array( 'type' => 'string', 'enum' => array( 'container', 'section', 'column', 'widget' ) ),
+				'widget_type' => $this->prop_string( 'Required for widgets: a registered type such as heading, text-editor, image or button.' ),
+				'parent_id' => $this->prop_string( 'Parent component ID; omit for page root.' ),
+				'position' => $this->prop_int( 'Zero-based insertion index; omit to append.', 0 ),
+				'settings' => $settings,
+			) ), array( 'page_id', 'revision', 'el_type' ) ),
+			$this->spec( 'edit_elementor_component', 'Elementor page: edit component', 'Update selected controls, preserving other controls and children. Published pages change immediately.', array_merge( $target, array( 'settings' => $settings ) ), array( 'page_id', 'revision', 'component_id', 'settings' ) ),
+			$this->spec( 'remove_elementor_component', 'Elementor page: remove component', 'Remove a component and its children. Requires the delete-content toggle. Published pages change immediately.', $target, array( 'page_id', 'revision', 'component_id' ) ),
 			$this->spec(
 				'check_connection',
 				'Check connection to WordPress',
@@ -1008,20 +992,6 @@ class NCPilot_REST_MCP {
 				)
 			),
 			$this->spec(
-				'activate_plugin',
-				'Activate a plugin',
-				'Turn on an already-installed plugin. Requires the site owner to enable the "manage plugins" toggle. Use the plugin path from list_plugins (e.g. "akismet/akismet").',
-				array( 'plugin' => $this->prop_string( 'Plugin path, e.g. "akismet/akismet".' ) ),
-				array( 'plugin' )
-			),
-			$this->spec(
-				'deactivate_plugin',
-				'Deactivate a plugin',
-				'Turn off an active plugin. Requires the "manage plugins" toggle. Use the plugin path from list_plugins.',
-				array( 'plugin' => $this->prop_string( 'Plugin path, e.g. "akismet/akismet".' ) ),
-				array( 'plugin' )
-			),
-			$this->spec(
 				'search_plugins',
 				'Search WordPress.org plugins',
 				'Search the official WordPress.org plugin directory. Returns slugs to use with install_plugin. Requires the site owner to enable the "install plugins" toggle.',
@@ -1034,10 +1004,9 @@ class NCPilot_REST_MCP {
 			$this->spec(
 				'install_plugin',
 				'Install a plugin from WordPress.org',
-				'Install a plugin from the official WordPress.org directory by slug (only WordPress.org packages are accepted). Requires the "install plugins" toggle. Set activate=true to also turn it on, which additionally requires the "manage plugins" toggle.',
+				'Install a plugin from the official WordPress.org directory by slug (only WordPress.org packages are accepted). Requires the "install plugins" toggle. The plugin is installed inactive; only the site owner can activate it, from the Plugins screen in wp-admin.',
 				array(
-					'slug'     => $this->prop_string( 'WordPress.org plugin slug, e.g. "akismet" (from search_plugins or the plugin URL).' ),
-					'activate' => $this->prop_bool( 'Also activate after installing (default false).' ),
+					'slug' => $this->prop_string( 'WordPress.org plugin slug, e.g. "akismet" (from search_plugins or the plugin URL).' ),
 				),
 				array( 'slug' )
 			),

@@ -65,10 +65,6 @@ class NCPilot_REST_Plugin_Install {
 						'sanitize_callback' => 'sanitize_key',
 						'validate_callback' => array( $this, 'validate_slug' ),
 					),
-					'activate' => array(
-						'type'    => 'boolean',
-						'default' => false,
-					),
 				),
 			)
 		);
@@ -148,7 +144,8 @@ class NCPilot_REST_Plugin_Install {
 	}
 
 	/**
-	 * Install (and optionally activate) a WordPress.org plugin.
+	 * Install a WordPress.org plugin. It is never activated here — only the
+	 * site owner activates plugins, from the Plugins screen.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
@@ -160,15 +157,14 @@ class NCPilot_REST_Plugin_Install {
 		require_once ABSPATH . 'wp-admin/includes/misc.php';
 		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
-		$slug     = (string) $request['slug'];
-		$activate = (bool) $request['activate'];
+		$slug = (string) $request['slug'];
 
 		$existing = $this->find_installed( $slug, array_keys( get_plugins() ) );
 		if ( $existing ) {
 			return new WP_Error(
 				'ncpilot_already_installed',
 				/* translators: %s: plugin slug. */
-				sprintf( __( 'Plugin "%s" is already installed. Use activate_plugin to turn it on.', 'nc-pilot' ), $slug ),
+				sprintf( __( 'Plugin "%s" is already installed. Activate it from the Plugins screen in wp-admin.', 'nc-pilot' ), $slug ),
 				array(
 					'status' => 409,
 					'plugin' => $existing,
@@ -240,38 +236,12 @@ class NCPilot_REST_Plugin_Install {
 			'name'      => isset( $api->name ) ? wp_strip_all_tags( (string) $api->name ) : $slug,
 			'version'   => isset( $api->version ) ? (string) $api->version : '',
 			'active'    => false,
-			'activated' => false,
+			'notice'    => __( 'Installed but not activated. The site owner can activate it from the Plugins screen in wp-admin.', 'nc-pilot' ),
 		);
-
-		if ( $activate ) {
-			$data = $this->maybe_activate( $plugin_file, $data );
-		}
 
 		return new WP_REST_Response( $data, 201 );
 	}
 
-	/**
-	 * Activate after install, but only if the "manage plugins" toggle is on.
-	 *
-	 * @param string $plugin_file Plugin file key.
-	 * @param array  $data        Response so far.
-	 * @return array Updated response (never throws; failure is reported inline).
-	 */
-	private function maybe_activate( $plugin_file, array $data ) {
-		if ( ! NCPilot_Security::is_enabled( NCPilot_Security::OPT_PLUGINS ) || ! current_user_can( 'activate_plugins' ) ) {
-			$data['notice'] = __( 'Installed but not activated: the "Let Claude turn plugins on or off" toggle is off.', 'nc-pilot' );
-			return $data;
-		}
-		$r = activate_plugin( $plugin_file );
-		if ( is_wp_error( $r ) ) {
-			/* translators: %s: underlying error message. */
-			$data['notice'] = sprintf( __( 'Installed but activation failed: %s', 'nc-pilot' ), $r->get_error_message() );
-			return $data;
-		}
-		$data['active']    = is_plugin_active( $plugin_file );
-		$data['activated'] = true;
-		return $data;
-	}
 
 	/**
 	 * Find an installed plugin whose folder matches the slug.
